@@ -4,7 +4,7 @@ Aplicación nativa macOS para consultar y revisar feedback de TestFlight. Se con
 
 ## Instalar
 
-1. Descarga el instalador desde [Releases](https://github.com/0sw2ld0/CuyAppleReport/releases) (o usa `dist/CuyAppleReport-1.2.dmg`), ábrelo y arrastra **CuyAppleReport** a **Aplicaciones**.
+1. Descarga el instalador desde [Releases](https://github.com/0sw2ld0/CuyAppleReport/releases) (o usa `dist/CuyAppleReport-1.3.dmg`), ábrelo y arrastra **CuyAppleReport** a **Aplicaciones**.
 2. La app está firmada *ad hoc* (sin Developer ID ni notarización). La primera vez, en otro Mac, ábrela con **clic derecho → Abrir** o desde **Ajustes del Sistema → Privacidad y seguridad → Abrir igualmente**.
 
 ## Usar
@@ -33,8 +33,8 @@ El certificado se usa solo para dominios de Apple y solo cuando la validación n
 - Modo **API key**: configuración con validación y drop/import de `.p8`, prueba de conexión y selección de apps.
 - JWT ES256, Keychain, SwiftData y cliente paginado de App Store Connect.
 - Sincronización manual e incremental y periódica mientras la app siga abierta en ventana o barra de menús; notificaciones y resumen de barra de menús.
-- Dashboard, tabla/galería, búsqueda, filtros de fecha, versión, build, tester, SO, dispositivo y estado; columna con el nombre real del iPhone (`iPhone14_2` → iPhone 13 Pro); inspector con notas y seguimiento.
-- Exportación de la vista actual a CSV UTF-8 con BOM, Excel `.xlsx` multihoja y un informe PDF con portada, resumen con gráficos, comentarios con capturas y el detalle de cada error (explicación en lenguaje sencillo, motivo del cierre y dónde falló).
+- Dashboard, tabla/galería, búsqueda, filtros de fecha, versiones (selección múltiple), build, tester, SO, dispositivo y estado; columna con el nombre real del iPhone (`iPhone14_2` → iPhone 13 Pro); inspector con notas y seguimiento.
+- Exportación de la vista actual (eligiendo qué versiones de la app incluir) a CSV UTF-8 con BOM, Excel `.xlsx` multihoja y un informe PDF con portada, resumen con gráficos, comentarios con capturas y el detalle de cada error (explicación en lenguaje sencillo, motivo del cierre y dónde falló).
 
 ## Requisitos
 

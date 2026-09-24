@@ -11,7 +11,6 @@ struct FeedbackListView: View {
     @State private var selectedDevice = "Todos"
     @State private var selectedOS = "Todos"
     @State private var selectedTester = "Todos"
-    @State private var selectedVersion = "Todos"
     @State private var selectedBuild = "Todos"
     @State private var selectedRange = "Todo el tiempo"
 
@@ -21,7 +20,7 @@ struct FeedbackListView: View {
             (selectedDevice == "Todos" || item.deviceModel == selectedDevice) &&
             (selectedOS == "Todos" || item.osVersion == selectedOS) &&
             (selectedTester == "Todos" || item.testerEmail == selectedTester) &&
-            (selectedVersion == "Todos" || item.appVersion == selectedVersion) &&
+            (appState.selectedVersions?.contains(item.versionKey) ?? true) &&
             (selectedBuild == "Todos" || item.buildNumber == selectedBuild) &&
             (dateThreshold == nil || item.createdDate >= dateThreshold!)
         }
@@ -32,15 +31,12 @@ struct FeedbackListView: View {
             DeviceNames.marketingName($0).localizedStandardCompare(DeviceNames.marketingName($1)) == .orderedAscending
         }
     }
-    /// Versiones de la app, de la más reciente a la más antigua (1.10 > 1.9).
-    private var versions: [String] {
-        Array(Set(items.compactMap(\.appVersion))).sorted { $0.compare($1, options: .numeric) == .orderedDescending }
-    }
+    private var versionOptions: [VersionOptions.Option] { VersionOptions.options(for: items) }
     private var osVersions: [String] { Array(Set(items.compactMap(\.osVersion))).sorted() }
     private var testers: [String] { Array(Set(items.compactMap(\.testerEmail))).sorted() }
-    /// Builds de la versión elegida (o de todas), de la más reciente a la más antigua.
+    /// Builds de las versiones elegidas (o de todas), de la más reciente a la más antigua.
     private var builds: [String] {
-        let source = selectedVersion == "Todos" ? items : items.filter { $0.appVersion == selectedVersion }
+        let source = appState.selectedVersions.map { versions in items.filter { versions.contains($0.versionKey) } } ?? items
         return Array(Set(source.compactMap(\.buildNumber))).sorted { $0.compare($1, options: .numeric) == .orderedDescending }
     }
     private var dateThreshold: Date? {
@@ -72,15 +68,12 @@ struct FeedbackListView: View {
                     Text("Todos los testers").tag("Todos")
                     ForEach(testers, id: \.self) { Text($0).tag($0) }
                 }.frame(width: 200)
-                Picker("Versión", selection: $selectedVersion) {
-                    Text("Todas las versiones").tag("Todos")
-                    ForEach(versions, id: \.self) { Text($0).tag($0) }
-                }
-                .frame(width: 160)
-                .onChange(of: selectedVersion) {
-                    // La build elegida puede no pertenecer a la nueva versión.
-                    if selectedBuild != "Todos", !builds.contains(selectedBuild) { selectedBuild = "Todos" }
-                }
+                Text("Versión")
+                VersionFilterButton(options: versionOptions, selection: $appState.selectedVersions)
+                    .onChange(of: appState.selectedVersions) {
+                        // La build elegida puede no pertenecer a las versiones elegidas.
+                        if selectedBuild != "Todos", !builds.contains(selectedBuild) { selectedBuild = "Todos" }
+                    }
                 Picker("Build", selection: $selectedBuild) {
                     Text("Todas las builds").tag("Todos")
                     ForEach(builds, id: \.self) { Text($0).tag($0) }

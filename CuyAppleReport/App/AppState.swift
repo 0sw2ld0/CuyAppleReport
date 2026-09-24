@@ -15,12 +15,17 @@ enum AppPage: String, Hashable {
 final class AppState: ObservableObject {
     @Published var page: AppPage = .dashboard
     @Published var selectedFeedbackId: String?
-    @Published var selectedAppId: String?
+    @Published var selectedAppId: String? {
+        // Cada app tiene sus propias versiones: al cambiar de app se vuelve a "todas".
+        didSet { if oldValue != selectedAppId { selectedVersions = nil } }
+    }
     @Published var searchQuery = ""
     @Published var isSyncing = false
     @Published var syncMessage: String?
     @Published var errorMessage: String?
     @Published var selectedStatus = "Todos"
+    /// Versiones de la app elegidas en el filtro (`nil` = todas). Se comparte con la exportación.
+    @Published var selectedVersions: Set<String>?
     @Published var syncProgress: SyncProgress?
     private var hideProgressTask: Task<Void, Never>?
     var modelContext: ModelContext?

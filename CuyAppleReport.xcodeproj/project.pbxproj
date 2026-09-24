@@ -33,6 +33,7 @@
 		D50AC9C2B84ACAE9D87B8F1F /* FileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72FA916ABC8595E75AD9CE50 /* FileStore.swift */; };
 		EC739AB0284AD725EE95C42D /* DeviceNames.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AED24FC723C0AEA1969B6C6 /* DeviceNames.swift */; };
 		EFCF03A594EF4C61A87F461D /* CrashLogSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = E571CF59BE614288CFC6FA02 /* CrashLogSummary.swift */; };
+		F04E311A3131A322C65BFC25 /* VersionSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A3334054D56C11CBC166C7A /* VersionSelection.swift */; };
 		F2C9D0DDA2C31E1140F6FCAC /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BCD61F7A34283EBE8A0C2EB /* MenuBarView.swift */; };
 		F743F9B9FB1B05DA864C4ACC /* FeedbackListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43F0FF86E7156D3B1D164036 /* FeedbackListView.swift */; };
 		F84E20226287A36862868EB7 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4919845A3F799DD8B1243BFF /* MainView.swift */; };
@@ -42,6 +43,7 @@
 		03979401676635AA3317AD36 /* AppStoreConnectClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStoreConnectClient.swift; sourceTree = "<group>"; };
 		0A05C24918839BFC17F2F9DB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		0AED24FC723C0AEA1969B6C6 /* DeviceNames.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceNames.swift; sourceTree = "<group>"; };
+		1A3334054D56C11CBC166C7A /* VersionSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VersionSelection.swift; sourceTree = "<group>"; };
 		1AD670FB5F6E30F194061D77 /* CuyAppleReport.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CuyAppleReport.entitlements; sourceTree = "<group>"; };
 		1AF9E4A6C5888A29298D99BD /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		2AF468EA4BF360623D82F119 /* ConnectionSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionSettingsView.swift; sourceTree = "<group>"; };
@@ -88,6 +90,7 @@
 				F5F7AAE40984BAF1C4B3BCBD /* FeedbackInspector.swift */,
 				43F0FF86E7156D3B1D164036 /* FeedbackListView.swift */,
 				C375AFF37F4E62C8C0E7908D /* ScreenshotViews.swift */,
+				1A3334054D56C11CBC166C7A /* VersionSelection.swift */,
 			);
 			path = Feedback;
 			sourceTree = "<group>";
@@ -309,6 +312,7 @@
 				467C8AEF74FC8CF69BF405F2 /* SyncProgress.swift in Sources */,
 				B073418754F82223E1E677B5 /* SyncProgressViews.swift in Sources */,
 				D1C6E2B15782B1A41D4C135B /* SyncService.swift in Sources */,
+				F04E311A3131A322C65BFC25 /* VersionSelection.swift in Sources */,
 				94CD154433264AACA0AAD642 /* WebSessionTransport.swift in Sources */,
 				08B029EA3AE4FA4EBB6BD8DA /* XLSXWriter.swift in Sources */,
 			);

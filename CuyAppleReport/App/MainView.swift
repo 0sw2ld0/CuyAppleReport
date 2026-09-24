@@ -71,10 +71,10 @@ struct MainView: View {
             }
         }
         .sheet(isPresented: $exportSheet) {
-            ExportSheet(itemCount: currentItems.count) { format, anonymize in
-                makeExport(format: format, anonymize: anonymize)
+            ExportSheet(items: currentItems, initialVersions: appState.selectedVersions) { format, anonymize, versions in
+                makeExport(format: format, anonymize: anonymize, versions: versions)
             }
-            .frame(width: 420, height: 300)
+            .frame(width: 440)
         }
         .fileExporter(isPresented: $fileExporter, document: exportDocument, contentType: exportType,
                       defaultFilename: exportName) { result in
@@ -223,9 +223,10 @@ struct MainView: View {
         )
     }
 
-    private func makeExport(format: ExportFormat, anonymize: Bool) {
+    private func makeExport(format: ExportFormat, anonymize: Bool, versions: Set<String>) {
         do {
-            let data = try ExportService.data(for: format, feedback: currentItems, anonymizeEmails: anonymize)
+            let items = currentItems.filter { versions.contains($0.versionKey) }
+            let data = try ExportService.data(for: format, feedback: items, anonymizeEmails: anonymize)
             let type: UTType = switch format {
             case .csv: .commaSeparatedText
             case .xlsx: .xlsx
@@ -235,32 +236,57 @@ struct MainView: View {
             exportDocument = ExportFile(data: data, contentType: type)
             let appName = activeConnection?.apps.first(where: { $0.appleId == appState.selectedAppId })?.name ?? "Todas"
             let safeName = appName.replacingOccurrences(of: "[^A-Za-z0-9_-]", with: "_", options: .regularExpression)
-            exportName = "CuyAppleReport_\(safeName)_\(Date.now.formatted(.iso8601.year().month().day()))"
+            let versionSuffix = versions.count == 1 ? "_v" + (versions.first ?? "").replacingOccurrences(of: "[^A-Za-z0-9._-]", with: "_", options: .regularExpression) : ""
+            exportName = "CuyAppleReport_\(safeName)\(versionSuffix)_\(Date.now.formatted(.iso8601.year().month().day()))"
             fileExporter = true
         } catch { exportError = error.localizedDescription }
     }
 }
 
 private struct ExportSheet: View {
-    let itemCount: Int
-    let onExport: (ExportFormat, Bool) -> Void
+    let items: [Feedback]
+    let onExport: (ExportFormat, Bool, Set<String>) -> Void
+    private let options: [VersionOptions.Option]
     @Environment(\.dismiss) private var dismiss
     @State private var format: ExportFormat = .csv
     @State private var anonymizeEmails = false
+    @State private var versions: Set<String>
+
+    /// Empieza con las versiones del filtro actual (o todas).
+    init(items: [Feedback], initialVersions: Set<String>?, onExport: @escaping (ExportFormat, Bool, Set<String>) -> Void) {
+        self.items = items
+        self.onExport = onExport
+        let options = VersionOptions.options(for: items)
+        self.options = options
+        let all = Set(options.map(\.version))
+        _versions = State(initialValue: initialVersions.map { $0.intersection(all) } ?? all)
+    }
+
+    private var selectedCount: Int { items.filter { versions.contains($0.versionKey) }.count }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             Text("Exportar feedback").font(.title2.bold())
-            Text("Se exportarán \(itemCount) elementos de la vista actual.").foregroundStyle(.secondary)
+            Text(selectedCount == 1 ? "Se exportará 1 elemento." : "Se exportarán \(selectedCount) elementos.")
+                .foregroundStyle(.secondary)
+                .contentTransition(.numericText())
+                .animation(.snappy, value: selectedCount)
             Picker("Formato", selection: $format) {
                 ForEach(ExportFormat.allCases) { Text($0.rawValue).tag($0) }
             }.pickerStyle(.radioGroup)
+            if !options.isEmpty {
+                GroupBox("Versiones de la app") {
+                    VersionChecklist(options: options, selection: $versions)
+                        .padding(6)
+                }
+            }
             Toggle("Anonimizar emails de testers", isOn: $anonymizeEmails)
-            Spacer()
             HStack {
                 Button("Cancelar") { dismiss() }
                 Spacer()
-                Button("Exportar…") { dismiss(); onExport(format, anonymizeEmails) }.keyboardShortcut(.defaultAction)
+                Button("Exportar…") { dismiss(); onExport(format, anonymizeEmails, versions) }
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(selectedCount == 0)
             }
         }
         .padding(24)

@@ -1,0 +1,46 @@
+name: CuyAppleReport
+options:
+  bundleIdPrefix: com.cuycoders
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    INFOPLIST_KEY_CFBundleDisplayName: CuyAppleReport
+    INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.developer-tools
+    CODE_SIGN_ENTITLEMENTS: CuyAppleReport/CuyAppleReport.entitlements
+    ENABLE_APP_SANDBOX: YES
+targets:
+  CuyAppleReport:
+    type: application
+    platform: macOS
+    sources:
+      - path: CuyAppleReport
+    info:
+      path: CuyAppleReport/Info.plist
+      properties:
+        UTImportedTypeDeclarations:
+          - UTTypeIdentifier: com.apple.p8-private-key
+            UTTypeDescription: App Store Connect private key
+            UTTypeConformsTo: [public.data]
+            UTTypeTagSpecification:
+              public.filename-extension: [p8]
+        NSHumanReadableCopyright: Copyright © CuyCoders
+        LSApplicationCategoryType: public.app-category.developer-tools
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.cuycoders.CuyAppleReport
+        PRODUCT_NAME: CuyAppleReport
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        SWIFT_EMIT_LOC_STRINGS: YES
+        INFOPLIST_KEY_NSHumanReadableCopyright: Copyright © CuyCoders
+        INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace: NO
+        INFOPLIST_KEY_NSUserNotificationAlertStyle: alert
+    entitlements:
+      path: CuyAppleReport/CuyAppleReport.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.network.client: true
+        com.apple.security.files.user-selected.read-write: true

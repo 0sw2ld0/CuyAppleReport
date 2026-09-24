@@ -1,0 +1,497 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		08B029EA3AE4FA4EBB6BD8DA /* XLSXWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A68D0F177E02B941BB1360AB /* XLSXWriter.swift */; };
+		0DC0C53B4A3DBCF95DA10BB8 /* PDFReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = D360B8EAC69DD8DEA2CA6472 /* PDFReport.swift */; };
+		0DCCE495CEA2F5F73AC23F3D /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AB3523D5C69170E9CA1AAF5 /* Models.swift */; };
+		121A0D2DBA70013F9DD326A0 /* DemoMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FB5B73F86B50783A2E37A28 /* DemoMode.swift */; };
+		12DC72AC1691D604D8E33577 /* CuyAppleReportApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1952473C1180BA545B16873 /* CuyAppleReportApp.swift */; };
+		180E8DD07FEEDF1A21981938 /* ASCTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42AA836A648846EA7166686A /* ASCTransport.swift */; };
+		2FB35413015FB0DD0780E84A /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0315AAC6E64EB25F674DA14 /* KeychainStore.swift */; };
+		3DB3EB157FB18A6B27DF8561 /* FeedbackInspector.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F7AAE40984BAF1C4B3BCBD /* FeedbackInspector.swift */; };
+		414DEAA94C4A20BB9EE07953 /* ScreenshotViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = C375AFF37F4E62C8C0E7908D /* ScreenshotViews.swift */; };
+		467C8AEF74FC8CF69BF405F2 /* SyncProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5AC75C5E50EC5B6114F5F54 /* SyncProgress.swift */; };
+		49860D5B6B269C3801E451B8 /* AppleTokenProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C9ECF41F29DAEB049305C3F /* AppleTokenProvider.swift */; };
+		5069E10FB5C2E8883D3D8A29 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9781374F27B045369D079DE8 /* AppState.swift */; };
+		5797093EEC21C74576AD4FE7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1AF9E4A6C5888A29298D99BD /* Assets.xcassets */; };
+		670A6E2E7A168432F69FDA07 /* AppStoreConnectClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03979401676635AA3317AD36 /* AppStoreConnectClient.swift */; };
+		6BF269A7282373ED1AE5135C /* ConnectionSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AF468EA4BF360623D82F119 /* ConnectionSettingsView.swift */; };
+		94CD154433264AACA0AAD642 /* WebSessionTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0A8FBB4E3A070B41CAE7DE8 /* WebSessionTransport.swift */; };
+		9D44393C63026A0C8DB8CE77 /* ExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 577821DFAAD37611AE95EEF5 /* ExportService.swift */; };
+		B073418754F82223E1E677B5 /* SyncProgressViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80C21ACE9D2F57C4B8155FD2 /* SyncProgressViews.swift */; };
+		B7880AA27B95F4D7CC2E4823 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C2DB0E8562994C00F1429B4 /* DashboardView.swift */; };
+		D1C6E2B15782B1A41D4C135B /* SyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EB67E1C095B77E1245F5A52 /* SyncService.swift */; };
+		D342D92647E1B2899F2D48EE /* AppleLoginWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6826B7293D9E2D9CAE511F31 /* AppleLoginWindow.swift */; };
+		D50AC9C2B84ACAE9D87B8F1F /* FileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72FA916ABC8595E75AD9CE50 /* FileStore.swift */; };
+		F2C9D0DDA2C31E1140F6FCAC /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BCD61F7A34283EBE8A0C2EB /* MenuBarView.swift */; };
+		F743F9B9FB1B05DA864C4ACC /* FeedbackListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43F0FF86E7156D3B1D164036 /* FeedbackListView.swift */; };
+		F84E20226287A36862868EB7 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4919845A3F799DD8B1243BFF /* MainView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		03979401676635AA3317AD36 /* AppStoreConnectClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStoreConnectClient.swift; sourceTree = "<group>"; };
+		0A05C24918839BFC17F2F9DB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		1AD670FB5F6E30F194061D77 /* CuyAppleReport.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CuyAppleReport.entitlements; sourceTree = "<group>"; };
+		1AF9E4A6C5888A29298D99BD /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		2AF468EA4BF360623D82F119 /* ConnectionSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionSettingsView.swift; sourceTree = "<group>"; };
+		2FB5B73F86B50783A2E37A28 /* DemoMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoMode.swift; sourceTree = "<group>"; };
+		3C9ECF41F29DAEB049305C3F /* AppleTokenProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleTokenProvider.swift; sourceTree = "<group>"; };
+		42AA836A648846EA7166686A /* ASCTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ASCTransport.swift; sourceTree = "<group>"; };
+		43F0FF86E7156D3B1D164036 /* FeedbackListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackListView.swift; sourceTree = "<group>"; };
+		4919845A3F799DD8B1243BFF /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
+		4BCD61F7A34283EBE8A0C2EB /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
+		4C2DB0E8562994C00F1429B4 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
+		577821DFAAD37611AE95EEF5 /* ExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportService.swift; sourceTree = "<group>"; };
+		5AB3523D5C69170E9CA1AAF5 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		6826B7293D9E2D9CAE511F31 /* AppleLoginWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleLoginWindow.swift; sourceTree = "<group>"; };
+		72FA916ABC8595E75AD9CE50 /* FileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileStore.swift; sourceTree = "<group>"; };
+		80C21ACE9D2F57C4B8155FD2 /* SyncProgressViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncProgressViews.swift; sourceTree = "<group>"; };
+		9781374F27B045369D079DE8 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		9EB67E1C095B77E1245F5A52 /* SyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncService.swift; sourceTree = "<group>"; };
+		A5AC75C5E50EC5B6114F5F54 /* SyncProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncProgress.swift; sourceTree = "<group>"; };
+		A68D0F177E02B941BB1360AB /* XLSXWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XLSXWriter.swift; sourceTree = "<group>"; };
+		B0315AAC6E64EB25F674DA14 /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStore.swift; sourceTree = "<group>"; };
+		B0A8FBB4E3A070B41CAE7DE8 /* WebSessionTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebSessionTransport.swift; sourceTree = "<group>"; };
+		C375AFF37F4E62C8C0E7908D /* ScreenshotViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotViews.swift; sourceTree = "<group>"; };
+		CE651E7F50AB7BFA367CE5F3 /* CuyAppleReport.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CuyAppleReport.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D360B8EAC69DD8DEA2CA6472 /* PDFReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFReport.swift; sourceTree = "<group>"; };
+		F1952473C1180BA545B16873 /* CuyAppleReportApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CuyAppleReportApp.swift; sourceTree = "<group>"; };
+		F5F7AAE40984BAF1C4B3BCBD /* FeedbackInspector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackInspector.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		098DA8D47CC47F865457C759 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				CE651E7F50AB7BFA367CE5F3 /* CuyAppleReport.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		1A765C40F1C4A693AC06D406 /* Feedback */ = {
+			isa = PBXGroup;
+			children = (
+				F5F7AAE40984BAF1C4B3BCBD /* FeedbackInspector.swift */,
+				43F0FF86E7156D3B1D164036 /* FeedbackListView.swift */,
+				C375AFF37F4E62C8C0E7908D /* ScreenshotViews.swift */,
+			);
+			path = Feedback;
+			sourceTree = "<group>";
+		};
+		29EE91B2DFE0A5BD577244F3 /* Dashboard */ = {
+			isa = PBXGroup;
+			children = (
+				4C2DB0E8562994C00F1429B4 /* DashboardView.swift */,
+			);
+			path = Dashboard;
+			sourceTree = "<group>";
+		};
+		41082B324574599D11EECF9A /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				6826B7293D9E2D9CAE511F31 /* AppleLoginWindow.swift */,
+				2AF468EA4BF360623D82F119 /* ConnectionSettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		42E7C8C6A92A7F60F9126C98 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				9781374F27B045369D079DE8 /* AppState.swift */,
+				F1952473C1180BA545B16873 /* CuyAppleReportApp.swift */,
+				2FB5B73F86B50783A2E37A28 /* DemoMode.swift */,
+				4919845A3F799DD8B1243BFF /* MainView.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		6CAB74A56E8B98B108F4700B /* Export */ = {
+			isa = PBXGroup;
+			children = (
+				577821DFAAD37611AE95EEF5 /* ExportService.swift */,
+				D360B8EAC69DD8DEA2CA6472 /* PDFReport.swift */,
+				A68D0F177E02B941BB1360AB /* XLSXWriter.swift */,
+			);
+			path = Export;
+			sourceTree = "<group>";
+		};
+		8919C0BDF372ECC81CA9700B /* Sync */ = {
+			isa = PBXGroup;
+			children = (
+				80C21ACE9D2F57C4B8155FD2 /* SyncProgressViews.swift */,
+			);
+			path = Sync;
+			sourceTree = "<group>";
+		};
+		B1CFC5692979BAD3663B1096 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				5AB3523D5C69170E9CA1AAF5 /* Models.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		C7FACD85A758296F5125DAD5 /* AppStoreConnect */ = {
+			isa = PBXGroup;
+			children = (
+				3C9ECF41F29DAEB049305C3F /* AppleTokenProvider.swift */,
+				03979401676635AA3317AD36 /* AppStoreConnectClient.swift */,
+				42AA836A648846EA7166686A /* ASCTransport.swift */,
+				B0A8FBB4E3A070B41CAE7DE8 /* WebSessionTransport.swift */,
+			);
+			path = AppStoreConnect;
+			sourceTree = "<group>";
+		};
+		D0F8EB74594A374FBA24452C /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				72FA916ABC8595E75AD9CE50 /* FileStore.swift */,
+				B0315AAC6E64EB25F674DA14 /* KeychainStore.swift */,
+				A5AC75C5E50EC5B6114F5F54 /* SyncProgress.swift */,
+				9EB67E1C095B77E1245F5A52 /* SyncService.swift */,
+				C7FACD85A758296F5125DAD5 /* AppStoreConnect */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		D1A6B520EAC78FD3F058485D /* MenuBar */ = {
+			isa = PBXGroup;
+			children = (
+				4BCD61F7A34283EBE8A0C2EB /* MenuBarView.swift */,
+			);
+			path = MenuBar;
+			sourceTree = "<group>";
+		};
+		D410129EC42D6E644BF550C7 = {
+			isa = PBXGroup;
+			children = (
+				E36A28E890F485C47A5FF935 /* CuyAppleReport */,
+				098DA8D47CC47F865457C759 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		E36A28E890F485C47A5FF935 /* CuyAppleReport */ = {
+			isa = PBXGroup;
+			children = (
+				1AF9E4A6C5888A29298D99BD /* Assets.xcassets */,
+				1AD670FB5F6E30F194061D77 /* CuyAppleReport.entitlements */,
+				0A05C24918839BFC17F2F9DB /* Info.plist */,
+				42E7C8C6A92A7F60F9126C98 /* App */,
+				FA509B95347982C2C8B38F34 /* Features */,
+				B1CFC5692979BAD3663B1096 /* Models */,
+				D0F8EB74594A374FBA24452C /* Services */,
+			);
+			path = CuyAppleReport;
+			sourceTree = "<group>";
+		};
+		FA509B95347982C2C8B38F34 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				29EE91B2DFE0A5BD577244F3 /* Dashboard */,
+				6CAB74A56E8B98B108F4700B /* Export */,
+				1A765C40F1C4A693AC06D406 /* Feedback */,
+				D1A6B520EAC78FD3F058485D /* MenuBar */,
+				41082B324574599D11EECF9A /* Settings */,
+				8919C0BDF372ECC81CA9700B /* Sync */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		F4DF1D97233828E69A076097 /* CuyAppleReport */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AC252B0A1A23A31E8A133E03 /* Build configuration list for PBXNativeTarget "CuyAppleReport" */;
+			buildPhases = (
+				493503C506A4BD143D911AFE /* Sources */,
+				00A32C6FEC0CB6C08DEB9121 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CuyAppleReport;
+			packageProductDependencies = (
+			);
+			productName = CuyAppleReport;
+			productReference = CE651E7F50AB7BFA367CE5F3 /* CuyAppleReport.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		DE4DD4F3941D1CE437A486BE /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = A255944CED9756CFFB46188D /* Build configuration list for PBXProject "CuyAppleReport" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = D410129EC42D6E644BF550C7;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 098DA8D47CC47F865457C759 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				F4DF1D97233828E69A076097 /* CuyAppleReport */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		00A32C6FEC0CB6C08DEB9121 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5797093EEC21C74576AD4FE7 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		493503C506A4BD143D911AFE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				180E8DD07FEEDF1A21981938 /* ASCTransport.swift in Sources */,
+				5069E10FB5C2E8883D3D8A29 /* AppState.swift in Sources */,
+				670A6E2E7A168432F69FDA07 /* AppStoreConnectClient.swift in Sources */,
+				D342D92647E1B2899F2D48EE /* AppleLoginWindow.swift in Sources */,
+				49860D5B6B269C3801E451B8 /* AppleTokenProvider.swift in Sources */,
+				6BF269A7282373ED1AE5135C /* ConnectionSettingsView.swift in Sources */,
+				12DC72AC1691D604D8E33577 /* CuyAppleReportApp.swift in Sources */,
+				B7880AA27B95F4D7CC2E4823 /* DashboardView.swift in Sources */,
+				121A0D2DBA70013F9DD326A0 /* DemoMode.swift in Sources */,
+				9D44393C63026A0C8DB8CE77 /* ExportService.swift in Sources */,
+				3DB3EB157FB18A6B27DF8561 /* FeedbackInspector.swift in Sources */,
+				F743F9B9FB1B05DA864C4ACC /* FeedbackListView.swift in Sources */,
+				D50AC9C2B84ACAE9D87B8F1F /* FileStore.swift in Sources */,
+				2FB35413015FB0DD0780E84A /* KeychainStore.swift in Sources */,
+				F84E20226287A36862868EB7 /* MainView.swift in Sources */,
+				F2C9D0DDA2C31E1140F6FCAC /* MenuBarView.swift in Sources */,
+				0DCCE495CEA2F5F73AC23F3D /* Models.swift in Sources */,
+				0DC0C53B4A3DBCF95DA10BB8 /* PDFReport.swift in Sources */,
+				414DEAA94C4A20BB9EE07953 /* ScreenshotViews.swift in Sources */,
+				467C8AEF74FC8CF69BF405F2 /* SyncProgress.swift in Sources */,
+				B073418754F82223E1E677B5 /* SyncProgressViews.swift in Sources */,
+				D1C6E2B15782B1A41D4C135B /* SyncService.swift in Sources */,
+				94CD154433264AACA0AAD642 /* WebSessionTransport.swift in Sources */,
+				08B029EA3AE4FA4EBB6BD8DA /* XLSXWriter.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		222BDBF3F50C205A8ECE3A72 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_ENTITLEMENTS = CuyAppleReport/CuyAppleReport.entitlements;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = CuyAppleReport;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		5AF3B31BB6B59F538E45D8C1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_ENTITLEMENTS = CuyAppleReport/CuyAppleReport.entitlements;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = CuyAppleReport;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		5CCB37F2DFCEEB201857DC7E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = CuyAppleReport/CuyAppleReport.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = CuyAppleReport/Info.plist;
+				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = NO;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © CuyCoders";
+				INFOPLIST_KEY_NSUserNotificationAlertStyle = alert;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.cuycoders.CuyAppleReport;
+				PRODUCT_NAME = CuyAppleReport;
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Debug;
+		};
+		8770514FA580C7E6ED58250A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = CuyAppleReport/CuyAppleReport.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = CuyAppleReport/Info.plist;
+				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = NO;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © CuyCoders";
+				INFOPLIST_KEY_NSUserNotificationAlertStyle = alert;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.cuycoders.CuyAppleReport;
+				PRODUCT_NAME = CuyAppleReport;
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A255944CED9756CFFB46188D /* Build configuration list for PBXProject "CuyAppleReport" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5AF3B31BB6B59F538E45D8C1 /* Debug */,
+				222BDBF3F50C205A8ECE3A72 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		AC252B0A1A23A31E8A133E03 /* Build configuration list for PBXNativeTarget "CuyAppleReport" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5CCB37F2DFCEEB201857DC7E /* Debug */,
+				8770514FA580C7E6ED58250A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = DE4DD4F3941D1CE437A486BE /* Project object */;
+}

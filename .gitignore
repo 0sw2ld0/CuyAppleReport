@@ -1,0 +1,23 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Xcode / Swift
+DerivedData/
+build/
+.build/
+.swiftpm/
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+
+# Secretos: nunca subir claves de App Store Connect ni variables de entorno
+*.p8
+*.pem
+.env
+.env.*
+
+# Distribución: solo se versiona el instalador .dmg generado por scripts/build-installer.sh
+dist/*
+!dist/*.dmg

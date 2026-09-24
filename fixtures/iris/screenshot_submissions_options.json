@@ -1,0 +1,14 @@
+{
+  "data": {
+    "type": "betaFeedbackScreenshotSubmissionsOptions",
+    "id": "1",
+    "attributes": {
+      "uniqueDeviceModels": ["iPhone16_2"],
+      "uniquePreReleaseVersions": ["00000000-0000-0000-0000-000000000003"],
+      "uniqueBuilds": ["00000000-0000-0000-0000-000000000001"],
+      "uniqueAppPlatforms": ["IOS"],
+      "uniqueDevicePlatformAndOsVersions": { "IOS": ["26.6"] },
+      "hasAppClips": false
+    }
+  }
+}

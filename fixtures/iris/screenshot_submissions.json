@@ -1,0 +1,64 @@
+{
+  "data": [
+    {
+      "type": "betaFeedbackScreenshotSubmissions",
+      "id": "AAAAAAAAAAAAAAAAAAAAAAA",
+      "attributes": {
+        "createdDate": "2026-08-11T21:30:22.695Z",
+        "comment": "Comentario de ejemplo del tester (anonimizado)",
+        "email": "tester@example.com",
+        "deviceModel": "iPhone16_2",
+        "osVersion": "26.6",
+        "locale": "es-PE",
+        "timeZone": "America/Lima",
+        "architecture": "arm64e",
+        "connectionType": "WIFI",
+        "pairedAppleWatch": null,
+        "appUptimeInMilliseconds": 101000,
+        "diskBytesAvailable": 30304960512,
+        "diskBytesTotal": 255515201536,
+        "batteryPercentage": 45,
+        "screenWidthInPoints": 932,
+        "screenHeightInPoints": 430,
+        "appPlatform": "IOS",
+        "devicePlatform": "IOS",
+        "deviceFamily": "IPHONE",
+        "buildBundleId": "com.example.app",
+        "buildBundleType": "APP",
+        "carrier": null,
+        "mobileNetworkType": null,
+        "screenshots": [
+          { "url": "https://tf-feedback.itunes.apple.com/eimg/XXX/original.jpg?sig=REDACTED", "width": 2796, "height": 1290, "expirationDate": "2026-10-01T00:00:00Z" }
+        ],
+        "sizedScreenshots": [
+          {
+            "original": { "url": "https://tf-feedback.itunes.apple.com/eimg/XXX/original.jpg?sig=REDACTED", "width": 2796, "height": 1290, "expirationDate": "2026-10-01T00:00:00Z" },
+            "fits1024": { "url": "https://tf-feedback.itunes.apple.com/eimg/XXX/1024.jpg?sig=REDACTED", "width": 1024, "height": 472, "expirationDate": "2026-10-01T00:00:00Z" },
+            "fits512":  { "url": "https://tf-feedback.itunes.apple.com/eimg/XXX/512.jpg?sig=REDACTED",  "width": 512,  "height": 236, "expirationDate": "2026-10-01T00:00:00Z" },
+            "fits256":  { "url": "https://tf-feedback.itunes.apple.com/eimg/XXX/256.jpg?sig=REDACTED",  "width": 256,  "height": 118, "expirationDate": "2026-10-01T00:00:00Z" }
+          }
+        ]
+      },
+      "relationships": {
+        "build":  { "data": { "type": "builds", "id": "00000000-0000-0000-0000-000000000001" } },
+        "tester": { "data": { "type": "betaTesters", "id": "00000000-0000-0000-0000-000000000002" } }
+      },
+      "links": { "self": "https://appstoreconnect.apple.com/iris/v1/betaFeedbackScreenshotSubmissions/AAAAAAAAAAAAAAAAAAAAAAA" }
+    }
+  ],
+  "included": [
+    {
+      "type": "builds",
+      "id": "00000000-0000-0000-0000-000000000001",
+      "attributes": { "version": "61" },
+      "relationships": { "preReleaseVersion": { "links": { "related": "https://appstoreconnect.apple.com/iris/v1/builds/00000000-0000-0000-0000-000000000001/preReleaseVersion" } } }
+    },
+    {
+      "type": "betaTesters",
+      "id": "00000000-0000-0000-0000-000000000002",
+      "attributes": { "firstName": "Test", "lastName": "Tester", "email": "tester@example.com", "inviteType": "EMAIL" }
+    }
+  ],
+  "links": { "self": "https://appstoreconnect.apple.com/iris/v1/apps/0000000000/betaFeedbackScreenshotSubmissions?include=tester,build&fields[builds]=version,preReleaseVersion&limit=60" },
+  "meta": { "paging": { "total": 1, "limit": 60 } }
+}

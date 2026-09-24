@@ -1,0 +1,11 @@
+{
+  "data": [
+    { "type": "apps", "id": "0000000001", "attributes": { "name": "App Uno" } },
+    { "type": "apps", "id": "0000000002", "attributes": { "name": "App Dos" } }
+  ],
+  "links": {
+    "self": "https://appstoreconnect.apple.com/iris/v1/apps?fields[apps]=name&limit=2",
+    "next": "https://appstoreconnect.apple.com/iris/v1/apps?fields[apps]=name&cursor=REDACTED&limit=2"
+  },
+  "meta": { "paging": { "total": 6, "limit": 2, "nextCursor": "REDACTED" } }
+}

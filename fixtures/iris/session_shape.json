@@ -1,0 +1,14 @@
+{
+  "_nota": "Solo la forma de GET /olympus/v1/session (valores inventados).",
+  "user": { "fullName": "Nombre Apellido", "firstName": "Nombre", "lastName": "Apellido", "emailAddress": "user@example.com", "prsId": "000000000" },
+  "provider": { "providerId": 111111111, "publicProviderId": "00000000-0000-0000-0000-00000000000a", "name": "Equipo Ejemplo", "contentTypes": ["SOFTWARE"], "subType": "COMPANY" },
+  "availableProviders": [
+    { "providerId": 111111111, "publicProviderId": "00000000-0000-0000-0000-00000000000a", "name": "Equipo Ejemplo", "contentTypes": ["SOFTWARE"], "subType": "COMPANY" },
+    { "providerId": 222222222, "publicProviderId": "00000000-0000-0000-0000-00000000000b", "name": "Persona Ejemplo", "contentTypes": ["SOFTWARE"], "subType": "INDIVIDUAL" }
+  ],
+  "roles": ["ADMIN"],
+  "backingType": "ITC",
+  "featureFlags": [],
+  "modules": [],
+  "publicUserId": "00000000-0000-0000-0000-00000000000c"
+}

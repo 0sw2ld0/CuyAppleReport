@@ -72,7 +72,7 @@ actor AppStoreConnectClient {
         self.transport = transport
     }
 
-    init(tokenProvider: AppleTokenProvider, session: URLSession = .shared) {
+    init(tokenProvider: AppleTokenProvider, session: URLSession = CorporateTrust.urlSession) {
         self.init(transport: APIKeyTransport(tokenProvider: tokenProvider, session: session))
     }
 

@@ -46,10 +46,10 @@ enum ASCHTTP {
 /// Modo API key: `https://api.appstoreconnect.apple.com` con JWT ES256.
 struct APIKeyTransport: ASCTransport {
     let tokenProvider: AppleTokenProvider
-    var session: URLSession = .shared
+    var session: URLSession = CorporateTrust.urlSession
     private let baseURL = URL(string: "https://api.appstoreconnect.apple.com")!
 
-    init(tokenProvider: AppleTokenProvider, session: URLSession = .shared) {
+    init(tokenProvider: AppleTokenProvider, session: URLSession = CorporateTrust.urlSession) {
         self.tokenProvider = tokenProvider
         self.session = session
     }

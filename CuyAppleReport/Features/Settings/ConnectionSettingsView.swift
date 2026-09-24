@@ -301,6 +301,7 @@ struct ConnectionSettingsView: View {
                 Label("Con Apple ID, la contraseña solo se escribe en la página de Apple; la app guarda únicamente la sesión web.", systemImage: "person.badge.key")
                 Label("El feedback se guarda localmente en este Mac.", systemImage: "internaldrive")
             }
+            CorporateCertificateSection()
             Section("Inicio") {
                 Toggle("Abrir al iniciar sesión", isOn: $launchAtLogin)
                     .onChange(of: launchAtLogin) { _, enabled in

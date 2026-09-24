@@ -1,4 +1,5 @@
 import AppKit
+import Security
 import SwiftUI
 import WebKit
 
@@ -51,6 +52,14 @@ private struct AppleLoginView: View {
     let onSession: @MainActor (ASCSessionInfo) -> Void
     let onClose: @MainActor () -> Void
     @State private var detected: ASCSessionInfo?
+    @State private var interception: Interception?
+    @State private var showTrustConfirmation = false
+    @State private var reloadToken = UUID()
+
+    private enum Interception {
+        case authority([SecCertificate])
+        case withoutAuthority
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -73,6 +82,9 @@ private struct AppleLoginView: View {
                     .keyboardShortcut(detected == nil ? .cancelAction : .defaultAction)
             }
             .padding(14)
+            if let interception, detected == nil {
+                interceptionBanner(interception)
+            }
             Divider()
             AppleWebView(dataStore: WebSessionStore.dataStore(for: connectionId), startURL: startURL) { info in
                 detected = info
@@ -84,8 +96,60 @@ private struct AppleLoginView: View {
                     }
                 }
             }
+            .id(reloadToken)
         }
         .frame(minWidth: 820, minHeight: 600)
+        .task { await detectInterception() }
+        .alert("¿Confiar en el certificado de tu red?", isPresented: $showTrustConfirmation) {
+            Button("Confiar y recargar") { trustDetectedAuthority() }
+            Button("Cancelar", role: .cancel) {}
+        } message: {
+            if case .authority(let certificates) = interception {
+                Text(CorporateTrust.confirmationText(for: certificates))
+            }
+        }
+    }
+
+    /// Si la red intercepta las conexiones con Apple y aún no hay certificado, lo detecta y lo ofrece.
+    private func detectInterception() async {
+        guard !CorporateTrust.shared.isEnabled else { return }
+        switch try? await CorporateTrust.detectInterception() {
+        case .intercepted(let certificates): withAnimation { interception = .authority(certificates) }
+        case .interceptedWithoutAuthority: withAnimation { interception = .withoutAuthority }
+        default: break
+        }
+    }
+
+    private func trustDetectedAuthority() {
+        guard case .authority(let certificates) = interception else { return }
+        CorporateTrust.shared.replace(with: certificates)
+        withAnimation { interception = nil }
+        reloadToken = UUID()
+    }
+
+    private func interceptionBanner(_ interception: Interception) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "building.2.crop.circle.fill").font(.title2).foregroundStyle(.orange)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Tu red está inspeccionando las conexiones con Apple").font(.headline)
+                switch interception {
+                case .authority(let certificates):
+                    Text("Por eso el formulario de inicio de sesión no carga. Certificado de la red: \(certificates.first.map { CorporateTrust.info($0).subject } ?? "desconocido").")
+                        .font(.caption).foregroundStyle(.secondary)
+                case .withoutAuthority:
+                    Text("La red no envía su certificado raíz. Pídelo a TI e impórtalo en Ajustes → General → Red corporativa.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            Spacer()
+            if case .authority = interception {
+                Button("Confiar en el certificado de la red…") { showTrustConfirmation = true }
+                    .buttonStyle(.borderedProminent)
+            }
+        }
+        .padding(.horizontal, 14).padding(.vertical, 10)
+        .background(Color.orange.opacity(0.12))
+        .transition(.move(edge: .top).combined(with: .opacity))
     }
 }
 
@@ -162,6 +226,13 @@ private struct AppleWebView: NSViewRepresentable {
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             checkSession()
+        }
+
+        /// Certificado corporativo opcional (inspección TLS). Sin certificado importado, delega en macOS.
+        func webView(_ webView: WKWebView, didReceive challenge: URLAuthenticationChallenge,
+                     completionHandler: @escaping @MainActor (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+            let (disposition, credential) = CorporateTrust.shared.disposition(for: challenge)
+            completionHandler(disposition, credential)
         }
 
         /// Solo se navega dentro de dominios de Apple; cualquier otro enlace se abre en el navegador.

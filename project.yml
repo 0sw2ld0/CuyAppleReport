@@ -29,6 +29,8 @@ targets:
               public.filename-extension: [p8]
         NSHumanReadableCopyright: Copyright © CuyCoders
         LSApplicationCategoryType: public.app-category.developer-tools
+        CFBundleShortVersionString: "1.1"
+        CFBundleVersion: "2"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.cuycoders.CuyAppleReport

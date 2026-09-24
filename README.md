@@ -4,7 +4,7 @@ Aplicación nativa macOS para consultar y revisar feedback de TestFlight. Se con
 
 ## Instalar
 
-1. Abre `dist/CuyAppleReport-1.0.dmg` y arrastra **CuyAppleReport** a **Aplicaciones**.
+1. Descarga el instalador desde [Releases](https://github.com/0sw2ld0/CuyAppleReport/releases) (o usa `dist/CuyAppleReport-1.1.dmg`), ábrelo y arrastra **CuyAppleReport** a **Aplicaciones**.
 2. La app está firmada *ad hoc* (sin Developer ID ni notarización). La primera vez, en otro Mac, ábrela con **clic derecho → Abrir** o desde **Ajustes del Sistema → Privacidad y seguridad → Abrir igualmente**.
 
 ## Usar
@@ -17,6 +17,15 @@ Aplicación nativa macOS para consultar y revisar feedback de TestFlight. Se con
 4. Pulsa **Sincronizar** en la ventana o usa `⌘R`.
 
 La clave privada se guarda en Keychain. En modo Apple ID, cuando la sesión caduca la app avisa con una notificación, pausa la sincronización y muestra el botón **Iniciar sesión**; el mínimo de sincronización automática en ese modo es 1 hora. El feedback, las capturas descargadas y los logs quedan en el almacenamiento local de la app. El proyecto también puede regenerarse desde `project.yml` con XcodeGen (`xcodegen generate`).
+
+### Redes corporativas con inspección TLS
+
+Si tu red (por ejemplo, la del trabajo) inspecciona las conexiones seguras, la ventana de inicio de sesión de Apple no carga: macOS aplica *pinning* al login del Apple ID (`idmsa.apple.com`) y rechaza el certificado de la empresa.
+
+- Al abrir **Iniciar sesión con Apple**, la app detecta la inspección y ofrece **Confiar en el certificado de la red…**.
+- También en **Ajustes → General → Red corporativa (opcional)**: **Detectar automáticamente**, o arrastra el certificado (`.pem`, `.cer`, `.crt`, `.der`).
+
+El certificado se usa solo para dominios de Apple y solo cuando la validación normal de macOS falla; la cadena debe terminar exactamente en él y el nombre del servidor debe coincidir. Tu empresa podrá ver ese tráfico, como ya ocurre en tus navegadores. Si no importas ninguno, la app valida igual que macOS.
 
 ## Alcance implementado
 

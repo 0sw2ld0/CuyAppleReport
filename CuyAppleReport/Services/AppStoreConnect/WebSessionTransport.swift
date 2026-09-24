@@ -151,6 +151,13 @@ private final class PageLoader: NSObject, WKNavigationDelegate {
         continuation = nil
     }
 
+    /// Certificado corporativo opcional (inspección TLS). Sin certificado importado, delega en macOS.
+    func webView(_ webView: WKWebView, didReceive challenge: URLAuthenticationChallenge,
+                 completionHandler: @escaping @MainActor (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+        let (disposition, credential) = CorporateTrust.shared.disposition(for: challenge)
+        completionHandler(disposition, credential)
+    }
+
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         continuation?.resume(throwing: ASCError.network)
         continuation = nil

@@ -7,7 +7,7 @@ enum FileStore {
     }
 
     static func saveScreenshot(from remoteURL: URL, submissionId: String, index: Int) async throws -> URL {
-        let (data, response) = try await URLSession.shared.data(from: remoteURL)
+        let (data, response) = try await CorporateTrust.urlSession.data(from: remoteURL)
         guard (response as? HTTPURLResponse).map({ (200..<300).contains($0.statusCode) }) ?? false else {
             throw ASCError.invalidResponse
         }

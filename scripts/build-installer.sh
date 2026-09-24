@@ -15,7 +15,7 @@ fi
 
 echo "→ Compilando Release (limpio)…"
 xcodebuild -project CuyAppleReport.xcodeproj -scheme CuyAppleReport -configuration Release \
-  -derivedDataPath "$WORK/DerivedData" CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO clean build -quiet
+  -destination 'generic/platform=macOS' -derivedDataPath "$WORK/DerivedData" CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO clean build -quiet
 
 APP="$WORK/DerivedData/Build/Products/Release/CuyAppleReport.app"
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Contents/Info.plist")"

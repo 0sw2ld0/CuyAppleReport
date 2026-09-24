@@ -36,24 +36,15 @@ enum XLSXWriter {
 
         let columns = ["ID", "Fecha", "App", "Versión", "Build", "Tester", "Dispositivo", "SO", "Idioma", "Comentario", "Estado", "Notas", "Capturas"]
         func feedbackRows(_ items: [Feedback]) -> [[Cell]] {
-            [columns.map(Cell.text)] + items.map { item in
-                [
-                    .text(item.appleId), .text(item.createdDate.formatted(date: .numeric, time: .shortened)),
-                    .text(item.app?.name ?? ""), .text(item.appVersion ?? ""), .text(item.buildNumber ?? ""),
-                    .text(anonymous(item.testerEmail, enabled: anonymizeEmails)), .text(item.deviceModel ?? ""),
-                    .text(item.osVersion ?? ""), .text(item.locale ?? ""), .text(item.comment ?? ""),
-                    .text(item.status), .text(item.notes), .text(item.screenshotPaths.joined(separator: " | "))
-                ]
-            }
+            let header: [Cell] = columns.map(Cell.text)
+            let rows: [[Cell]] = items.map { feedbackRow($0, anonymizeEmails: anonymizeEmails) }
+            return [header] + rows
         }
-        let crashRows = [["ID", "Fecha", "App", "Build", "Tester", "Dispositivo", "SO", "Comentario", "Crash log (primeros 500 caracteres)", "Ruta completa", "Estado"].map(Cell.text)] + crashes.map { item in
-            let log = item.crashLogPath.flatMap { try? String(contentsOfFile: $0, encoding: .utf8) } ?? ""
-            return [.text(item.appleId), .text(item.createdDate.formatted(date: .numeric, time: .shortened)),
-                    .text(item.app?.name ?? ""), .text(item.buildNumber ?? ""),
-                    .text(anonymous(item.testerEmail, enabled: anonymizeEmails)), .text(item.deviceModel ?? ""),
-                    .text(item.osVersion ?? ""), .text(item.comment ?? ""), .text(String(log.prefix(500))),
-                    .text(item.crashLogPath ?? ""), .text(item.status)]
-        }
+        let crashColumns = ["ID", "Fecha", "App", "Build", "Tester", "Dispositivo", "SO", "Comentario",
+                            "Crash log (primeros 500 caracteres)", "Ruta completa", "Estado"]
+        let crashHeader: [Cell] = crashColumns.map(Cell.text)
+        let crashBody: [[Cell]] = crashes.map { crashRow($0, anonymizeEmails: anonymizeEmails) }
+        let crashRows: [[Cell]] = [crashHeader] + crashBody
         func aggregates(_ key: (Feedback) -> String) -> [[Cell]] {
             let grouped = Dictionary(grouping: feedback, by: key)
             return [[.text("Categoría"), .text("Comentarios"), .text("Errores"), .text("Total")]] +
@@ -82,6 +73,45 @@ enum XLSXWriter {
             files.append(("xl/worksheets/sheet\(index + 1).xml", Data(sheetXML(sheet).utf8)))
         }
         return zip(files)
+    }
+
+    // Cada fila se arma en su propia función con tipos explícitos: un único literal con
+    // muchos `.text(... ?? "")` dentro de `map` y `+` puede exceder el tiempo de type-check.
+    private static func feedbackRow(_ item: Feedback, anonymizeEmails: Bool) -> [Cell] {
+        let values: [String] = [
+            item.appleId,
+            item.createdDate.formatted(date: .numeric, time: .shortened),
+            item.app?.name ?? "",
+            item.appVersion ?? "",
+            item.buildNumber ?? "",
+            anonymous(item.testerEmail, enabled: anonymizeEmails),
+            item.deviceModel ?? "",
+            item.osVersion ?? "",
+            item.locale ?? "",
+            item.comment ?? "",
+            item.status,
+            item.notes,
+            item.screenshotPaths.joined(separator: " | ")
+        ]
+        return values.map(Cell.text)
+    }
+
+    private static func crashRow(_ item: Feedback, anonymizeEmails: Bool) -> [Cell] {
+        let log: String = item.crashLogPath.flatMap { try? String(contentsOfFile: $0, encoding: .utf8) } ?? ""
+        let values: [String] = [
+            item.appleId,
+            item.createdDate.formatted(date: .numeric, time: .shortened),
+            item.app?.name ?? "",
+            item.buildNumber ?? "",
+            anonymous(item.testerEmail, enabled: anonymizeEmails),
+            item.deviceModel ?? "",
+            item.osVersion ?? "",
+            item.comment ?? "",
+            String(log.prefix(500)),
+            item.crashLogPath ?? "",
+            item.status
+        ]
+        return values.map(Cell.text)
     }
 
     private static func contentTypes(_ count: Int) -> String {

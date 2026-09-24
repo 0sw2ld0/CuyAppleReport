@@ -534,10 +534,10 @@ private struct RankBars: View {
 private struct CommentCard: View {
     let item: ReportItem
     let total: Int
-    static let commentLines = 4
+    nonisolated static let commentLines = 4
 
     /// Altura aproximada de la tarjeta (para paginar antes de renderizar).
-    static func estimatedHeight(_ item: ReportItem) -> CGFloat {
+    nonisolated static func estimatedHeight(_ item: ReportItem) -> CGFloat {
         let characters = Double(item.comment?.count ?? 24)
         let lines = min(commentLines, max(1, Int((characters / 60).rounded(.up))))
         var height: CGFloat = 32 + 20 + 12 + CGFloat(lines) * 19 + 12 + 22
@@ -577,7 +577,7 @@ private struct CommentCard: View {
 
 private struct ScreenshotStrip: View {
     let paths: [String]
-    static let height: CGFloat = 180
+    nonisolated static let height: CGFloat = 180
     private var height: CGFloat { Self.height }
 
     var body: some View {

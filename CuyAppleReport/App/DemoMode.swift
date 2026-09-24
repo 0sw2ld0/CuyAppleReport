@@ -39,8 +39,28 @@ enum DemoMode {
                                     createdDate: .now.addingTimeInterval(Double(-index - 4) * 5400), app: app))
         }
         let crashTypes = ["EXC_CRASH (SIGABRT)", "EXC_BAD_ACCESS (SIGSEGV)", "EXC_BREAKPOINT (SIGTRAP)"]
+        let reasons = ["SIGNAL 6 Abort trap: 6", "SIGNAL 11 Segmentation fault: 11", "SIGNAL 5 Trace/BPT trap: 5"]
         for index in 0..<5 {
-            let log = "Incident Identifier: DEMO\nHardware Model: iPhone17,3\nException Type:  \(crashTypes[index % 3])\n"
+            let log = """
+            Incident Identifier: DEMO
+            Hardware Model: iPhone17,3
+            Process: CuyBugs [1234]
+            Exception Type:  \(crashTypes[index % 3])
+            Exception Subtype: KERN_INVALID_ADDRESS at 0x0000000000000010
+            Termination Reason: \(reasons[index % 3])
+            Triggered by Thread:  0
+
+            Thread 0 Crashed:
+            0   libsystem_kernel.dylib        \t0x00000001e1c2a1d4 __pthread_kill + 8
+            1   libsystem_pthread.dylib       \t0x00000001f3a1b2c8 pthread_kill + 268
+            2   libsystem_c.dylib             \t0x00000001a9b8c3d4 abort + 180
+            3   libc++abi.dylib               \t0x00000001f39e4e8c abort_message + 132
+            4   CuyBugs                       \t0x0000000100a1b2c4 CheckoutViewModel.pay() + 212 (CheckoutViewModel.swift:88)
+            5   CuyBugs                       \t0x0000000100a1c3d8 closure #1 in CheckoutView.body.getter + 64 (CheckoutView.swift:42)
+            6   SwiftUI                       \t0x00000001a2b3c4d5 0x1a2b00000 + 123456
+
+            Binary Images:
+            """
             let url = FileManager.default.temporaryDirectory.appending(path: "demo-crash-\(index).txt")
             try? Data(log.utf8).write(to: url)
             let crash = Feedback(appleId: "demo-crash-\(index)", kind: "Error", comment: index.isMultiple(of: 2) ? "Se cerró al abrir el perfil" : nil,

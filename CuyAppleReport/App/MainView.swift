@@ -21,7 +21,7 @@ struct MainView: View {
     private var filteredFeedback: [Feedback] {
         feedback.filter { item in
             (appState.selectedAppId == nil || item.app?.appleId == appState.selectedAppId) &&
-            (appState.searchQuery.isEmpty || [item.comment, item.testerEmail, item.deviceModel, item.app?.name]
+            (appState.searchQuery.isEmpty || [item.comment, item.testerEmail, item.deviceModel, item.deviceModel.map { DeviceNames.marketingName($0) }, item.appVersion, item.app?.name]
                 .compactMap { $0 }.contains { $0.localizedCaseInsensitiveContains(appState.searchQuery) })
         }
     }

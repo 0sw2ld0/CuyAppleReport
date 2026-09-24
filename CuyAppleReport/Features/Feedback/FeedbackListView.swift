@@ -11,6 +11,7 @@ struct FeedbackListView: View {
     @State private var selectedDevice = "Todos"
     @State private var selectedOS = "Todos"
     @State private var selectedTester = "Todos"
+    @State private var selectedVersion = "Todos"
     @State private var selectedBuild = "Todos"
     @State private var selectedRange = "Todo el tiempo"
 
@@ -20,14 +21,28 @@ struct FeedbackListView: View {
             (selectedDevice == "Todos" || item.deviceModel == selectedDevice) &&
             (selectedOS == "Todos" || item.osVersion == selectedOS) &&
             (selectedTester == "Todos" || item.testerEmail == selectedTester) &&
+            (selectedVersion == "Todos" || item.appVersion == selectedVersion) &&
             (selectedBuild == "Todos" || item.buildNumber == selectedBuild) &&
             (dateThreshold == nil || item.createdDate >= dateThreshold!)
         }
     }
-    private var devices: [String] { Array(Set(items.compactMap(\.deviceModel))).sorted() }
+    /// Identificadores de dispositivo ordenados por su nombre comercial.
+    private var devices: [String] {
+        Array(Set(items.compactMap(\.deviceModel))).sorted {
+            DeviceNames.marketingName($0).localizedStandardCompare(DeviceNames.marketingName($1)) == .orderedAscending
+        }
+    }
+    /// Versiones de la app, de la más reciente a la más antigua (1.10 > 1.9).
+    private var versions: [String] {
+        Array(Set(items.compactMap(\.appVersion))).sorted { $0.compare($1, options: .numeric) == .orderedDescending }
+    }
     private var osVersions: [String] { Array(Set(items.compactMap(\.osVersion))).sorted() }
     private var testers: [String] { Array(Set(items.compactMap(\.testerEmail))).sorted() }
-    private var builds: [String] { Array(Set(items.compactMap(\.buildNumber))).sorted() }
+    /// Builds de la versión elegida (o de todas), de la más reciente a la más antigua.
+    private var builds: [String] {
+        let source = selectedVersion == "Todos" ? items : items.filter { $0.appVersion == selectedVersion }
+        return Array(Set(source.compactMap(\.buildNumber))).sorted { $0.compare($1, options: .numeric) == .orderedDescending }
+    }
     private var dateThreshold: Date? {
         let days: Int? = switch selectedRange { case "7 días": 7; case "30 días": 30; case "90 días": 90; default: nil }
         return days.flatMap { Calendar.current.date(byAdding: .day, value: -$0, to: .now) }
@@ -47,8 +62,8 @@ struct FeedbackListView: View {
                 }.frame(width: 150)
                 Picker("Dispositivo", selection: $selectedDevice) {
                     Text("Todos los dispositivos").tag("Todos")
-                    ForEach(devices, id: \.self) { Text($0).tag($0) }
-                }.frame(width: 190)
+                    ForEach(devices, id: \.self) { Text(DeviceNames.labeled($0)).tag($0) }
+                }.frame(width: 230)
                 Picker("SO", selection: $selectedOS) {
                     Text("Todas las versiones").tag("Todos")
                     ForEach(osVersions, id: \.self) { Text($0).tag($0) }
@@ -57,6 +72,15 @@ struct FeedbackListView: View {
                     Text("Todos los testers").tag("Todos")
                     ForEach(testers, id: \.self) { Text($0).tag($0) }
                 }.frame(width: 200)
+                Picker("Versión", selection: $selectedVersion) {
+                    Text("Todas las versiones").tag("Todos")
+                    ForEach(versions, id: \.self) { Text($0).tag($0) }
+                }
+                .frame(width: 160)
+                .onChange(of: selectedVersion) {
+                    // La build elegida puede no pertenecer a la nueva versión.
+                    if selectedBuild != "Todos", !builds.contains(selectedBuild) { selectedBuild = "Todos" }
+                }
                 Picker("Build", selection: $selectedBuild) {
                     Text("Todas las builds").tag("Todos")
                     ForEach(builds, id: \.self) { Text($0).tag($0) }
@@ -99,7 +123,8 @@ struct FeedbackListView: View {
                         .foregroundStyle(.secondary)
                 }
             }.width(min: 60, ideal: 75)
-            TableColumn("Dispositivo") { feedback in Text(feedback.deviceModel ?? "—").lineLimit(1) }.width(min: 100, ideal: 130)
+            TableColumn("Modelo") { feedback in Text(feedback.deviceModel == nil ? "—" : feedback.deviceName).lineLimit(1) }.width(min: 110, ideal: 140)
+            TableColumn("Dispositivo") { feedback in Text(feedback.deviceModel ?? "—").foregroundStyle(.secondary).lineLimit(1) }.width(min: 80, ideal: 100)
             TableColumn("iOS") { feedback in Text(feedback.osVersion ?? "—") }.width(min: 60, ideal: 75)
             TableColumn("Versión") { feedback in Text(feedback.appVersion ?? "—") }.width(min: 55, ideal: 70)
             TableColumn("Build") { feedback in Text(feedback.buildNumber ?? "—").lineLimit(1) }.width(min: 55, ideal: 110)

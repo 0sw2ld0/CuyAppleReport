@@ -35,7 +35,7 @@ struct FeedbackInspector: View {
                 GroupBox("Tester y dispositivo") {
                     VStack(alignment: .leading, spacing: 7) {
                         metadata("Tester", item.testerEmail)
-                        metadata("Dispositivo", item.deviceModel)
+                        metadata("Dispositivo", item.deviceModel.map { DeviceNames.labeled($0) })
                         metadata("Sistema", item.osVersion)
                         metadata("Build", item.buildNumber)
                         metadata("Versión", item.appVersion)

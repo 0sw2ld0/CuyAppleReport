@@ -31,6 +31,8 @@
 		D1C6E2B15782B1A41D4C135B /* SyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EB67E1C095B77E1245F5A52 /* SyncService.swift */; };
 		D342D92647E1B2899F2D48EE /* AppleLoginWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6826B7293D9E2D9CAE511F31 /* AppleLoginWindow.swift */; };
 		D50AC9C2B84ACAE9D87B8F1F /* FileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72FA916ABC8595E75AD9CE50 /* FileStore.swift */; };
+		EC739AB0284AD725EE95C42D /* DeviceNames.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AED24FC723C0AEA1969B6C6 /* DeviceNames.swift */; };
+		EFCF03A594EF4C61A87F461D /* CrashLogSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = E571CF59BE614288CFC6FA02 /* CrashLogSummary.swift */; };
 		F2C9D0DDA2C31E1140F6FCAC /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BCD61F7A34283EBE8A0C2EB /* MenuBarView.swift */; };
 		F743F9B9FB1B05DA864C4ACC /* FeedbackListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43F0FF86E7156D3B1D164036 /* FeedbackListView.swift */; };
 		F84E20226287A36862868EB7 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4919845A3F799DD8B1243BFF /* MainView.swift */; };
@@ -39,6 +41,7 @@
 /* Begin PBXFileReference section */
 		03979401676635AA3317AD36 /* AppStoreConnectClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStoreConnectClient.swift; sourceTree = "<group>"; };
 		0A05C24918839BFC17F2F9DB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		0AED24FC723C0AEA1969B6C6 /* DeviceNames.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceNames.swift; sourceTree = "<group>"; };
 		1AD670FB5F6E30F194061D77 /* CuyAppleReport.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CuyAppleReport.entitlements; sourceTree = "<group>"; };
 		1AF9E4A6C5888A29298D99BD /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		2AF468EA4BF360623D82F119 /* ConnectionSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionSettingsView.swift; sourceTree = "<group>"; };
@@ -65,6 +68,7 @@
 		C375AFF37F4E62C8C0E7908D /* ScreenshotViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotViews.swift; sourceTree = "<group>"; };
 		CE651E7F50AB7BFA367CE5F3 /* CuyAppleReport.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CuyAppleReport.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D360B8EAC69DD8DEA2CA6472 /* PDFReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFReport.swift; sourceTree = "<group>"; };
+		E571CF59BE614288CFC6FA02 /* CrashLogSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashLogSummary.swift; sourceTree = "<group>"; };
 		F1952473C1180BA545B16873 /* CuyAppleReportApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CuyAppleReportApp.swift; sourceTree = "<group>"; };
 		F5F7AAE40984BAF1C4B3BCBD /* FeedbackInspector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackInspector.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -138,6 +142,7 @@
 		B1CFC5692979BAD3663B1096 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				0AED24FC723C0AEA1969B6C6 /* DeviceNames.swift */,
 				5AB3523D5C69170E9CA1AAF5 /* Models.swift */,
 			);
 			path = Models;
@@ -158,6 +163,7 @@
 			isa = PBXGroup;
 			children = (
 				B50C172F9DAABB8A19E02158 /* CorporateTrust.swift */,
+				E571CF59BE614288CFC6FA02 /* CrashLogSummary.swift */,
 				72FA916ABC8595E75AD9CE50 /* FileStore.swift */,
 				B0315AAC6E64EB25F674DA14 /* KeychainStore.swift */,
 				A5AC75C5E50EC5B6114F5F54 /* SyncProgress.swift */,
@@ -285,9 +291,11 @@
 				6BF269A7282373ED1AE5135C /* ConnectionSettingsView.swift in Sources */,
 				A01CDD4F909DD9E6A9A0EC17 /* CorporateCertificateSection.swift in Sources */,
 				304E014F49511DDBA6C273F5 /* CorporateTrust.swift in Sources */,
+				EFCF03A594EF4C61A87F461D /* CrashLogSummary.swift in Sources */,
 				12DC72AC1691D604D8E33577 /* CuyAppleReportApp.swift in Sources */,
 				B7880AA27B95F4D7CC2E4823 /* DashboardView.swift in Sources */,
 				121A0D2DBA70013F9DD326A0 /* DemoMode.swift in Sources */,
+				EC739AB0284AD725EE95C42D /* DeviceNames.swift in Sources */,
 				9D44393C63026A0C8DB8CE77 /* ExportService.swift in Sources */,
 				3DB3EB157FB18A6B27DF8561 /* FeedbackInspector.swift in Sources */,
 				F743F9B9FB1B05DA864C4ACC /* FeedbackListView.swift in Sources */,

@@ -89,7 +89,9 @@ struct ReportItem: Identifiable {
     let status: String
     let appName: String
     let screenshots: [String]
-    let crashType: String?
+    let crash: CrashLogSummary?
+
+    var crashType: String? { crash?.exceptionType }
 
     var versionLabel: String? {
         switch (version, build) {
@@ -146,14 +148,14 @@ struct ReportModel {
         let items: [ReportItem] = sorted.map { item in
             let isCrash = item.kind == "Error"
             if isCrash { crashNumber += 1 } else { commentNumber += 1 }
-            let crashType: String? = isCrash ? item.crashLogPath.flatMap(Self.exceptionType(atPath:)) : nil
+            let crash: CrashLogSummary? = isCrash ? item.crashLogPath.flatMap { CrashLogSummary(path: $0) } : nil
             return ReportItem(
                 id: item.appleId, number: isCrash ? crashNumber : commentNumber, isCrash: isCrash,
                 date: item.createdDate, comment: item.comment?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty,
                 tester: Self.tester(item, anonymize: anonymize),
                 device: DeviceNames.marketingName(item.deviceModel), deviceCode: item.deviceModel,
                 os: item.osVersion, version: item.appVersion, build: item.buildNumber, status: item.status,
-                appName: item.app?.name ?? "App", screenshots: item.orderedScreenshotPaths, crashType: crashType)
+                appName: item.app?.name ?? "App", screenshots: item.orderedScreenshotPaths, crash: crash)
         }
         comments = items.filter { !$0.isCrash }
         crashes = items.filter(\.isCrash)
@@ -207,8 +209,23 @@ struct ReportModel {
             current.append(item)
         }
         if !current.isEmpty { pages.append(.comments(current, isFirst: isFirst)) }
-        let crashChunks = crashes.isEmpty ? [] : [Array(crashes.prefix(11))] + Array(crashes.dropFirst(11)).chunked(17)
-        for (index, chunk) in crashChunks.enumerated() { pages.append(.crashes(chunk, isFirst: index == 0)) }
+        // Errores: la primera página lleva además el resumen (unos 170 puntos).
+        current = []
+        used = 0
+        isFirst = true
+        for item in crashes {
+            let height = CrashCard.estimatedHeight(item)
+            let budget: CGFloat = isFirst ? 455 : 680
+            if !current.isEmpty, used + 14 + height > budget {
+                pages.append(.crashes(current, isFirst: isFirst))
+                isFirst = false
+                current = []
+                used = 0
+            }
+            used += (current.isEmpty ? 0 : 14) + height
+            current.append(item)
+        }
+        if !current.isEmpty { pages.append(.crashes(current, isFirst: isFirst)) }
         return pages
     }
 
@@ -237,45 +254,12 @@ struct ReportModel {
         return item.testerName?.nilIfEmpty ?? item.testerEmail ?? "Tester"
     }
 
-    /// Lee "Exception Type:" de las primeras líneas del crash log.
-    private static func exceptionType(atPath path: String) -> String? {
-        guard let handle = FileHandle(forReadingAtPath: path) else { return nil }
-        defer { try? handle.close() }
-        let head = String(decoding: handle.readData(ofLength: 16_000), as: UTF8.self)
-        guard let line = head.split(separator: "\n").first(where: { $0.hasPrefix("Exception Type:") }) else { return nil }
-        return line.dropFirst("Exception Type:".count).trimmingCharacters(in: .whitespaces).nilIfEmpty
-    }
 }
 
 private extension String {
     var nilIfEmpty: String? { isEmpty ? nil : self }
 }
 
-private extension Array {
-    func chunked(_ size: Int) -> [[Element]] {
-        stride(from: 0, to: count, by: size).map { Array(self[$0..<Swift.min($0 + size, count)]) }
-    }
-}
-
-/// Nombres comerciales de los modelos más comunes (`iPhone16_2` → "iPhone 15 Pro Max").
-enum DeviceNames {
-    private static let names: [String: String] = [
-        "iPhone12,1": "iPhone 11", "iPhone12,3": "iPhone 11 Pro", "iPhone12,5": "iPhone 11 Pro Max", "iPhone12,8": "iPhone SE (2.ª gen.)",
-        "iPhone13,1": "iPhone 12 mini", "iPhone13,2": "iPhone 12", "iPhone13,3": "iPhone 12 Pro", "iPhone13,4": "iPhone 12 Pro Max",
-        "iPhone14,4": "iPhone 13 mini", "iPhone14,5": "iPhone 13", "iPhone14,2": "iPhone 13 Pro", "iPhone14,3": "iPhone 13 Pro Max",
-        "iPhone14,6": "iPhone SE (3.ª gen.)", "iPhone14,7": "iPhone 14", "iPhone14,8": "iPhone 14 Plus",
-        "iPhone15,2": "iPhone 14 Pro", "iPhone15,3": "iPhone 14 Pro Max", "iPhone15,4": "iPhone 15", "iPhone15,5": "iPhone 15 Plus",
-        "iPhone16,1": "iPhone 15 Pro", "iPhone16,2": "iPhone 15 Pro Max",
-        "iPhone17,1": "iPhone 16 Pro", "iPhone17,2": "iPhone 16 Pro Max", "iPhone17,3": "iPhone 16", "iPhone17,4": "iPhone 16 Plus",
-        "iPhone17,5": "iPhone 16e",
-        "iPhone18,1": "iPhone 17 Pro", "iPhone18,2": "iPhone 17 Pro Max", "iPhone18,3": "iPhone 17", "iPhone18,4": "iPhone Air"
-    ]
-
-    static func marketingName(_ raw: String?) -> String {
-        guard let raw, !raw.isEmpty else { return "Dispositivo desconocido" }
-        return names[raw.replacingOccurrences(of: "_", with: ",")] ?? raw
-    }
-}
 
 private enum ReportImages {
     /// Miniatura para el PDF (limita el tamaño del archivo y la memoria).
@@ -648,37 +632,99 @@ private struct CrashesContent: View {
                     Card(title: "Tipos de error más frecuentes") { RankBars(items: report.crashTypes, color: RP.orange) }
                 }
             }
-
-            VStack(spacing: 0) {
-                row(date: "Fecha", device: "Dispositivo", os: "iOS", version: "Versión", type: "Tipo de error", comment: "Comentario del tester", header: true)
-                ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                    row(date: RP.date(item.date, .abbreviated, time: .shortened), device: item.device,
-                        os: item.os ?? "—", version: item.versionLabel ?? "—", type: item.crashType ?? "—",
-                        comment: item.comment ?? "—", header: false)
-                        .background(index.isMultiple(of: 2) ? RP.faint : RP.paper)
-                }
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-            .overlay(RoundedRectangle(cornerRadius: 10).stroke(RP.line, lineWidth: 1))
+            ForEach(items) { CrashCard(item: $0) }
             Spacer(minLength: 0)
         }
     }
+}
 
-    private func row(date: String, device: String, os: String, version: String, type: String, comment: String, header: Bool) -> some View {
-        let font = Font.system(size: header ? 8.5 : 9, weight: header ? .bold : .regular)
-        let color = header ? RP.muted : RP.ink
-        return HStack(alignment: .top, spacing: 8) {
-            Text(date).frame(width: 78, alignment: .leading)
-            Text(device).frame(width: 88, alignment: .leading)
-            Text(os).frame(width: 30, alignment: .leading)
-            Text(version).frame(width: 78, alignment: .leading)
-            Text(type).frame(width: 88, alignment: .leading)
-            Text(comment).frame(maxWidth: .infinity, alignment: .leading)
+/// Tarjeta de un error: qué pasó en lenguaje sencillo, datos técnicos y dónde falló.
+private struct CrashCard: View {
+    let item: ReportItem
+
+    /// Altura aproximada (para paginar antes de renderizar).
+    nonisolated static func estimatedHeight(_ item: ReportItem) -> CGFloat {
+        var height: CGFloat = 32 + 20 + 10 + 22 + 10 + 46   // cabecera, chips y explicación
+        if let comment = item.comment {
+            height += 10 + CGFloat(min(3, max(1, Int((Double(comment.count) / 60).rounded(.up))))) * 19
         }
-        .font(font)
-        .foregroundStyle(color)
-        .lineLimit(2)
-        .padding(.horizontal, 10)
-        .padding(.vertical, header ? 7 : 8)
+        if let crash = item.crash {
+            height += 10 + 16 * CGFloat([crash.terminationReason, crash.exceptionSubtype].compactMap { $0 }.count + 1)
+            if !crash.frames.isEmpty { height += 10 + 22 + CGFloat(crash.frames.count) * 13 }
+        }
+        return height
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Text("Error #\(item.number)").font(.system(size: 10, weight: .bold)).foregroundStyle(.white)
+                    .padding(.horizontal, 8).padding(.vertical, 3)
+                    .background(RP.orange, in: Capsule())
+                Text(RP.date(item.date, .long, time: .shortened)).font(.system(size: 10)).foregroundStyle(RP.muted)
+                Spacer()
+                StatusPill(status: item.status)
+            }
+
+            FlowChips(values: [item.device, item.os.map { "iOS \($0)" }, item.versionLabel, item.tester].compactMap { $0 })
+
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "exclamationmark.triangle.fill").font(.system(size: 14)).foregroundStyle(RP.orange)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(item.crash?.plainExplanation ?? "La app se cerró de forma inesperada.")
+                        .font(.system(size: 12, weight: .semibold)).foregroundStyle(RP.ink)
+                    Text(item.crash?.exceptionType ?? "Sin crash log descargado")
+                        .font(.system(size: 9.5, design: .monospaced)).foregroundStyle(RP.muted)
+                }
+            }
+            .padding(10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RP.orange.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
+
+            if let comment = item.comment {
+                Text("“\(comment)”").font(.system(size: 12)).italic().foregroundStyle(RP.ink).lineLimit(3)
+            }
+
+            if let crash = item.crash {
+                VStack(alignment: .leading, spacing: 4) {
+                    detail("Motivo del cierre", crash.terminationReason)
+                    detail("Subtipo", crash.exceptionSubtype)
+                    detail("Hilo que falló", crash.crashedThread.map { "Hilo \($0)" })
+                }
+                if !crash.frames.isEmpty {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Dónde falló (llamadas del hilo)").font(.system(size: 9, weight: .semibold)).foregroundStyle(RP.muted)
+                        ForEach(Array(crash.frames.enumerated()), id: \.offset) { _, frame in
+                            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                                Text("\(frame.index)").frame(width: 18, alignment: .trailing).foregroundStyle(RP.muted)
+                                Text(frame.image).frame(width: 118, alignment: .leading).truncationMode(.middle)
+                                    .foregroundStyle(frame.isApp ? RP.blue : RP.ink)
+                                    .fontWeight(frame.isApp ? .semibold : .regular)
+                                Text(frame.symbol).foregroundStyle(RP.ink).truncationMode(.middle)
+                            }
+                            .font(.system(size: 8.5, design: .monospaced))
+                            .lineLimit(1)
+                        }
+                    }
+                    .padding(10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(RP.faint, in: RoundedRectangle(cornerRadius: 8))
+                }
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 14).fill(RP.paper))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(RP.line, lineWidth: 1))
+    }
+
+    @ViewBuilder
+    private func detail(_ label: String, _ value: String?) -> some View {
+        if let value {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(label).font(.system(size: 9.5)).foregroundStyle(RP.muted).frame(width: 100, alignment: .leading)
+                Text(value).font(.system(size: 9.5, design: .monospaced)).foregroundStyle(RP.ink).lineLimit(1)
+            }
+        }
     }
 }

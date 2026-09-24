@@ -211,7 +211,7 @@ struct DashboardView: View {
     }
 
     private var topDevices: [DeviceCount] {
-        let counts = Dictionary(grouping: crashes, by: { $0.deviceModel ?? "Desconocido" })
+        let counts = Dictionary(grouping: crashes, by: { $0.deviceModel == nil ? "Desconocido" : $0.deviceName })
             .map { DeviceCount(name: $0.key, count: $0.value.count) }
         return Array(counts.sorted { $0.count > $1.count }.prefix(5))
     }
@@ -352,7 +352,7 @@ private struct RecentFeedbackRow: View {
                     .font(.subheadline)
                     .lineLimit(1)
                     .foregroundStyle(.primary)
-                Text([item.app?.name, item.deviceModel, item.appVersion.map { "v\($0)" }, item.buildNumber.map { "Build \($0)" }]
+                Text([item.app?.name, item.deviceModel.map { DeviceNames.marketingName($0) }, item.appVersion.map { "v\($0)" }, item.buildNumber.map { "Build \($0)" }]
                     .compactMap { $0 }
                     .joined(separator: " · "))
                     .font(.caption)

@@ -89,7 +89,10 @@ struct FeedbackListView: View {
             if filtered.isEmpty {
                 ContentUnavailableView(items.isEmpty ? "Sin feedback" : "Sin resultados", systemImage: "text.bubble", description: Text(items.isEmpty ? "Sincroniza App Store Connect para cargar feedback." : "Cambia o limpia los filtros para ver más elementos."))
             } else if layout == .table {
+                // Reconstruir la tabla al cambiar filtros evita que SwiftUI compare y anime cada fila,
+                // que con muchos elementos bloqueaba la app.
                 tableView
+                    .id(tableIdentity)
             } else {
                 galleryView
             }
@@ -130,6 +133,11 @@ struct FeedbackListView: View {
         } primaryAction: { selection in
             if let id = selection.first { appState.selectedFeedbackId = id }
         }
+    }
+
+    private var tableIdentity: String {
+        [selectedStatus, selectedDevice, selectedOS, selectedTester, selectedBuild, selectedRange,
+         appState.selectedVersions.map { $0.sorted().joined(separator: ",") } ?? "*", "\(items.count)"].joined(separator: "§")
     }
 
     /// La selección de la tabla se deriva de `appState.selectedFeedbackId` (una sola fuente de verdad) y usa

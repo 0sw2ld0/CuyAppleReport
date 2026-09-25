@@ -101,6 +101,33 @@ enum DemoMode {
             ("Lucía Mora", .invited, nil, nil, nil, true), ("Diego León", .installed, "1.1", "65", "iPhone18_2", true),
             ("Carla Soto", .revoked, nil, nil, nil, true), ("Equipo QA", .installed, "1.1", "65", "iPhone17_3", false)
         ]
+        // --demo-testers=N: muchos testers para medir el rendimiento.
+        if let arg = ProcessInfo.processInfo.arguments.first(where: { $0.hasPrefix("--demo-testers=") }),
+           let count = Int(arg.dropFirst("--demo-testers=".count)) {
+            let states: [TesterState] = [.installed, .installed, .installed, .invited, .accepted, .revoked]
+            let models = ["iPhone14_2", "iPhone15_2", "iPhone16_2", "iPhone17_1", "iPhone18_2", "iPad13_10"]
+            for index in 0..<count {
+                let tester = BetaTesterRecord(recordId: "bench|\(index)", testerId: "b\(index)", app: app)
+                tester.firstName = "Tester"
+                tester.lastName = "\(index)"
+                tester.email = "tester\(index)@example.com"
+                let state = states[index % states.count]
+                tester.stateRaw = state.rawValue
+                tester.inviteType = index % 4 == 0 ? "PUBLIC_LINK" : "EMAIL"
+                if state == .installed {
+                    let build = 54 + index % 12
+                    tester.installedVersion = build >= 63 ? "1.1" : "1.0"
+                    tester.installedBuild = "\(build)"
+                    tester.installedDevice = models[index % models.count]
+                    tester.installedOsVersion = "26.\(index % 6)"
+                    tester.numberOfInstalledDevices = 1
+                }
+                tester.isExternal = true
+                tester.groupIds = ["demo-ext"]
+                tester.sessions30 = index % 40
+                context.insert(tester)
+            }
+        }
         for (index, person) in people.enumerated() {
             let tester = BetaTesterRecord(recordId: "demo|t\(index)", testerId: "t\(index)", app: app)
             let parts = person.0.split(separator: " ")
@@ -122,6 +149,31 @@ enum DemoMode {
             tester.feedback30 = index % 3 == 0 && person.1 == .installed ? 2 : 0
             context.insert(tester)
         }
+    }
+
+    /// Mide el peor retraso del hilo principal (un bloqueo de la interfaz se ve como un retraso grande).
+    static func startHangMonitor() {
+        let worst = ManagedWorst()
+        Thread.detachNewThread {
+            while true {
+                let start = Date()
+                let done = DispatchSemaphore(value: 0)
+                DispatchQueue.main.async { done.signal() }
+                done.wait()
+                worst.record(Date().timeIntervalSince(start))
+                Thread.sleep(forTimeInterval: 0.05)
+            }
+        }
+        hangMonitor = worst
+    }
+
+    nonisolated(unsafe) static var hangMonitor: ManagedWorst?
+
+    final class ManagedWorst: @unchecked Sendable {
+        private let lock = NSLock()
+        private var value: TimeInterval = 0
+        func record(_ latency: TimeInterval) { lock.withLock { value = max(value, latency) } }
+        func take() -> Int { lock.withLock { defer { value = 0 }; return Int(value * 1000) } }
     }
 
     @MainActor

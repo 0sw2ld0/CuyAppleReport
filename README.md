@@ -4,7 +4,7 @@ Aplicación nativa macOS para consultar y revisar feedback de TestFlight. Se con
 
 ## Instalar
 
-1. Descarga el instalador desde [Releases](https://github.com/0sw2ld0/CuyAppleReport/releases) (o usa `dist/CuyAppleReport-1.4.dmg`), ábrelo y arrastra **CuyAppleReport** a **Aplicaciones**.
+1. Descarga el instalador desde [Releases](https://github.com/0sw2ld0/CuyAppleReport/releases) (o usa `dist/CuyAppleReport-1.4.1.dmg`), ábrelo y arrastra **CuyAppleReport** a **Aplicaciones**.
 2. La app está firmada *ad hoc* (sin Developer ID ni notarización). La primera vez, en otro Mac, ábrela con **clic derecho → Abrir** o desde **Ajustes del Sistema → Privacidad y seguridad → Abrir igualmente**.
 
 ## Usar

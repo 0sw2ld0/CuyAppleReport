@@ -11,7 +11,15 @@ enum VersionOptions {
     struct Option: Identifiable, Hashable {
         let version: String
         let count: Int
+        /// Texto que se muestra; por defecto "v1.2" o "Sin versión".
+        var title: String
         var id: String { version }
+
+        init(version: String, count: Int, title: String? = nil) {
+            self.version = version
+            self.count = count
+            self.title = title ?? (version == VersionOptions.withoutVersion ? version : "v\(version)")
+        }
     }
 
     /// Versiones presentes con su cantidad, de la más reciente a la más antigua ("Sin versión" al final).
@@ -52,7 +60,7 @@ struct VersionChecklist: View {
                             }
                         )) {
                             HStack {
-                                Text(option.version == VersionOptions.withoutVersion ? option.version : "v\(option.version)")
+                                Text(option.title)
                                 Spacer()
                                 Text("\(option.count)").foregroundStyle(.secondary).monospacedDigit()
                             }
@@ -111,7 +119,7 @@ struct VersionFilterButton: View {
         let active = selection.intersection(allVersions)
         switch active.count {
         case 0: return "Ninguna versión"
-        case 1: return active.first.map { $0 == VersionOptions.withoutVersion ? $0 : "v\($0)" } ?? ""
+        case 1: return active.first.flatMap { version in options.first { $0.version == version }?.title } ?? ""
         default: return "\(active.count) versiones"
         }
     }

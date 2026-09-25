@@ -101,6 +101,12 @@ final class MonitoredApp {
     var lastSyncAt: Date?
     var connection: Connection?
     @Relationship(deleteRule: .cascade) var feedbacks: [Feedback] = []
+    @Relationship(deleteRule: .cascade) var testers: [BetaTesterRecord] = []
+    @Relationship(deleteRule: .cascade) var betaGroups: [BetaGroupRecord] = []
+    /// Última build subida a TestFlight (para saber qué testers están al día).
+    var latestVersion: String?
+    var latestBuild: String?
+    var testersSyncedAt: Date?
 
     init(appleId: String, name: String, bundleId: String, iconURL: URL? = nil,
          isMonitored: Bool = true, connection: Connection? = nil) {
@@ -192,4 +198,110 @@ enum FeedbackStatus: String, CaseIterable, Identifiable {
     case resolved = "Resuelto"
     case ignored = "Ignorado"
     var id: String { rawValue }
+}
+
+/// Estado de la invitación de un tester en TestFlight.
+enum TesterState: String, CaseIterable, Identifiable {
+    case notInvited = "NOT_INVITED"
+    case invited = "INVITED"
+    case accepted = "ACCEPTED"
+    case installed = "INSTALLED"
+    case revoked = "REVOKED"
+
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .notInvited: "Sin invitar"
+        case .invited: "Invitado"
+        case .accepted: "Aceptó"
+        case .installed: "Instalado"
+        case .revoked: "Revocado"
+        }
+    }
+    /// Aceptó la invitación (instalar implica haber aceptado).
+    var hasAccepted: Bool { self == .accepted || self == .installed }
+}
+
+/// Un dispositivo en el que el tester instaló la app.
+struct TesterDevice: Codable, Hashable, Sendable {
+    let model: String?
+    let platform: String?
+    let osVersion: String?
+    let appBuildVersion: String?
+}
+
+/// Tester de TestFlight de una app (uno por app: el mismo tester puede estar en varias).
+@Model
+final class BetaTesterRecord {
+    @Attribute(.unique) var recordId: String      // "<appId>|<testerId>"
+    var testerId: String
+    var email: String?
+    var firstName: String?
+    var lastName: String?
+    var stateRaw: String?
+    var inviteType: String?                        // EMAIL | PUBLIC_LINK
+    var installedVersion: String?
+    var installedBuild: String?
+    var installedDevice: String?
+    var installedOsVersion: String?
+    var numberOfInstalledDevices: Int = 0
+    var devicesData: Data?
+    var groupIds: [String] = []
+    var isExternal: Bool = false
+    var isInternal: Bool = false
+    var sessions30: Int = 0
+    var crashes30: Int = 0
+    var feedback30: Int = 0
+    var lastModifiedDate: Date?
+    var app: MonitoredApp?
+
+    init(recordId: String, testerId: String, app: MonitoredApp?) {
+        self.recordId = recordId
+        self.testerId = testerId
+        self.app = app
+    }
+
+    var state: TesterState? { stateRaw.flatMap(TesterState.init(rawValue:)) }
+    var displayName: String {
+        let name = [firstName, lastName].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " ")
+        return name.isEmpty ? (email ?? "Tester") : name
+    }
+    var devices: [TesterDevice] {
+        get { devicesData.flatMap { try? JSONDecoder().decode([TesterDevice].self, from: $0) } ?? [] }
+        set { devicesData = try? JSONEncoder().encode(newValue) }
+    }
+    /// "v1.0 (64)", o nil si no tiene la app instalada.
+    var installedLabel: String? {
+        switch (installedVersion, installedBuild) {
+        case let (v?, b?): "v\(v) (\(b))"
+        case let (v?, nil): "v\(v)"
+        case let (nil, b?): "Build \(b)"
+        default: nil
+        }
+    }
+    /// Tiene instalada la última build subida.
+    var isUpToDate: Bool {
+        guard let installedBuild, let latest = app?.latestBuild else { return false }
+        return installedBuild == latest
+    }
+}
+
+/// Grupo de TestFlight (interno o externo).
+@Model
+final class BetaGroupRecord {
+    @Attribute(.unique) var groupId: String
+    var name: String
+    var isInternal: Bool
+    var publicLinkEnabled: Bool = false
+    var publicLinkLimit: Int?
+    var feedbackEnabled: Bool = false
+    var createdDate: Date?
+    var app: MonitoredApp?
+
+    init(groupId: String, name: String, isInternal: Bool, app: MonitoredApp?) {
+        self.groupId = groupId
+        self.name = name
+        self.isInternal = isInternal
+        self.app = app
+    }
 }

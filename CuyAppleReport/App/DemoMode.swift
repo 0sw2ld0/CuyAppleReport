@@ -38,6 +38,7 @@ enum DemoMode {
                                     osVersion: "26.1", appVersion: "1.1", buildNumber: "65",
                                     createdDate: .now.addingTimeInterval(Double(-index - 4) * 5400), app: app))
         }
+        seedTesters(context, app: app)
         let crashTypes = ["EXC_CRASH (SIGABRT)", "EXC_BAD_ACCESS (SIGSEGV)", "EXC_BREAKPOINT (SIGTRAP)"]
         let reasons = ["SIGNAL 6 Abort trap: 6", "SIGNAL 11 Segmentation fault: 11", "SIGNAL 5 Trace/BPT trap: 5"]
         for index in 0..<5 {
@@ -78,6 +79,48 @@ enum DemoMode {
                 print("PDF_WRITTEN \(url.path) \(data.count)")
             }
             exit(0)
+        }
+    }
+
+    @MainActor
+    private static func seedTesters(_ context: ModelContext, app: MonitoredApp) {
+        app.latestVersion = "1.1"
+        app.latestBuild = "65"
+        let internalGroup = BetaGroupRecord(groupId: "demo-int", name: "Equipo CuyCoders", isInternal: true, app: app)
+        let external = BetaGroupRecord(groupId: "demo-ext", name: "Clientes beta", isInternal: false, app: app)
+        external.publicLinkEnabled = true
+        external.publicLinkLimit = 100
+        external.feedbackEnabled = true
+        internalGroup.feedbackEnabled = true
+        context.insert(internalGroup)
+        context.insert(external)
+        let people: [(String, TesterState, String?, String?, String?, Bool)] = [
+            ("Ana Torres", .installed, "1.1", "65", "iPhone17_1", true), ("Luis Rojas", .installed, "1.1", "65", "iPhone16_2", true),
+            ("María Díaz", .installed, "1.0", "62", "iPhone14_2", true), ("Jorge Paz", .installed, "1.0", "61", "iPhone15_2", true),
+            ("Sofía Ruiz", .accepted, nil, nil, nil, true), ("Pedro Vega", .invited, nil, nil, nil, true),
+            ("Lucía Mora", .invited, nil, nil, nil, true), ("Diego León", .installed, "1.1", "65", "iPhone18_2", true),
+            ("Carla Soto", .revoked, nil, nil, nil, true), ("Equipo QA", .installed, "1.1", "65", "iPhone17_3", false)
+        ]
+        for (index, person) in people.enumerated() {
+            let tester = BetaTesterRecord(recordId: "demo|t\(index)", testerId: "t\(index)", app: app)
+            let parts = person.0.split(separator: " ")
+            tester.firstName = String(parts[0])
+            tester.lastName = String(parts[1])
+            tester.email = "\(parts[0].lowercased())@example.com"
+            tester.stateRaw = person.1.rawValue
+            tester.inviteType = index == 4 ? "PUBLIC_LINK" : "EMAIL"
+            tester.installedVersion = person.2
+            tester.installedBuild = person.3
+            tester.installedDevice = person.4
+            tester.installedOsVersion = person.4 == nil ? nil : "26.\(index % 3)"
+            tester.numberOfInstalledDevices = person.4 == nil ? 0 : (index == 1 ? 2 : 1)
+            tester.isExternal = person.5
+            tester.isInternal = !person.5
+            tester.groupIds = [person.5 ? "demo-ext" : "demo-int"]
+            tester.sessions30 = person.1 == .installed ? 5 + index * 7 : 0
+            tester.crashes30 = index == 2 ? 3 : (index == 3 ? 1 : 0)
+            tester.feedback30 = index % 3 == 0 && person.1 == .installed ? 2 : 0
+            context.insert(tester)
         }
     }
 

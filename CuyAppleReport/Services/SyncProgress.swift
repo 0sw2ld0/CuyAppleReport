@@ -3,10 +3,10 @@ import Foundation
 /// Estado visible de una sincronización en curso.
 struct SyncProgress: Equatable, Sendable {
     enum Phase: Int, CaseIterable, Sendable {
-        case connecting, comments, images, crashes, saving, done, failed
+        case connecting, comments, images, crashes, testers, saving, done, failed
 
         /// Pasos que se muestran en la tarjeta de progreso.
-        static let steps: [Phase] = [.connecting, .comments, .images, .crashes]
+        static let steps: [Phase] = [.connecting, .comments, .images, .crashes, .testers]
 
         var title: String {
             switch self {
@@ -14,6 +14,7 @@ struct SyncProgress: Equatable, Sendable {
             case .comments: "Buscando comentarios"
             case .images: "Descargando capturas"
             case .crashes: "Buscando errores"
+            case .testers: "Revisando testers"
             case .saving: "Guardando"
             case .done: "Sincronización completa"
             case .failed: "No se pudo sincronizar"
@@ -26,6 +27,7 @@ struct SyncProgress: Equatable, Sendable {
             case .comments: "Comentarios"
             case .images: "Capturas"
             case .crashes: "Errores"
+            case .testers: "Testers"
             case .saving: "Guardando"
             case .done: "Listo"
             case .failed: "Error"
@@ -38,6 +40,7 @@ struct SyncProgress: Equatable, Sendable {
             case .comments: "text.bubble"
             case .images: "photo.on.rectangle.angled"
             case .crashes: "exclamationmark.triangle"
+            case .testers: "person.2"
             case .saving: "internaldrive"
             case .done: "checkmark.circle.fill"
             case .failed: "xmark.octagon.fill"
@@ -88,6 +91,7 @@ struct SyncProgress: Equatable, Sendable {
             let images = imagesTotal > 0 ? Double(imagesDone) / Double(imagesTotal) : 1
             withinApp = 0.25 + 0.55 * images
         case .crashes: withinApp = 0.85
+        case .testers: withinApp = 0.93
         default: withinApp = 0
         }
         let value = (Double(appIndex) + withinApp) / Double(appCount)

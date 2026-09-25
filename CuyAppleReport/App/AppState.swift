@@ -9,6 +9,7 @@ enum AppPage: String, Hashable {
     case dashboard = "Dashboard"
     case comments = "Comentarios"
     case crashes = "Errores"
+    case testers = "Testers"
 }
 
 @MainActor

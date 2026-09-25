@@ -30,7 +30,12 @@ struct MainView: View {
         case .dashboard: filteredFeedback
         case .comments: filteredFeedback.filter { $0.kind == "Comentario" }
         case .crashes: filteredFeedback.filter { $0.kind == "Error" }
+        case .testers: []
         }
+    }
+    /// Apps monitoreadas visibles según la app elegida en la barra lateral.
+    private var visibleApps: [MonitoredApp] {
+        apps.filter { $0.isMonitored && (appState.selectedAppId == nil || $0.appleId == appState.selectedAppId) }
     }
 
     var body: some View {
@@ -131,6 +136,9 @@ struct MainView: View {
                 sidebarButton("Comentarios", symbol: "text.bubble", page: .comments, appId: appState.selectedAppId)
                 sidebarButton("Errores", symbol: "exclamationmark.triangle", page: .crashes, appId: appState.selectedAppId)
             }
+            Section("TestFlight") {
+                sidebarButton("Testers", symbol: "person.2", page: .testers, appId: appState.selectedAppId)
+            }
             if let connection = activeConnection {
                 Section("Última sync") {
                     Label(connection.apps.compactMap(\.lastSyncAt).max()?.formatted(.relative(presentation: .named)) ?? "Nunca", systemImage: "clock")
@@ -161,6 +169,7 @@ struct MainView: View {
                     case .dashboard: DashboardView(feedback: filteredFeedback)
                     case .comments: FeedbackListView(items: filteredFeedback.filter { $0.kind == "Comentario" })
                     case .crashes: FeedbackListView(items: filteredFeedback.filter { $0.kind == "Error" })
+                    case .testers: TestersView(apps: visibleApps)
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

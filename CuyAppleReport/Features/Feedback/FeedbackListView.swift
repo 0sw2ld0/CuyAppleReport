@@ -98,7 +98,7 @@ struct FeedbackListView: View {
     }
 
     private var tableView: some View {
-        Table(filtered, selection: tableSelection) {
+        Table(filtered.map(FeedbackRow.init), selection: tableSelection) {
             TableColumn("Fecha") { feedback in
                 Text(feedback.createdDate.formatted(date: .numeric, time: .shortened)).font(.caption).foregroundStyle(.secondary)
             }.width(min: 125, ideal: 145)
@@ -123,28 +123,26 @@ struct FeedbackListView: View {
             TableColumn("Build") { feedback in Text(feedback.buildNumber ?? "—").lineLimit(1) }.width(min: 55, ideal: 110)
             TableColumn("Estado") { feedback in Text(feedback.status).foregroundStyle(statusColor(feedback.status)) }.width(min: 90, ideal: 110)
         }
-        .contextMenu(forSelectionType: PersistentIdentifier.self) { selection in
+        .contextMenu(forSelectionType: String.self) { selection in
             Button("Marcar como en revisión") { updateStatus(selection, to: .inReview) }
             Button("Marcar como resuelto") { updateStatus(selection, to: .resolved) }
             Button("Copiar comentario") { copyComment(selection) }
         } primaryAction: { selection in
-            if let id = selection.first, let feedback = filtered.first(where: { $0.persistentModelID == id }) {
-                appState.selectedFeedbackId = feedback.appleId
-            }
+            if let id = selection.first { appState.selectedFeedbackId = id }
         }
     }
 
-    /// La selección de la tabla se deriva de `appState.selectedFeedbackId` (una sola fuente de verdad):
-    /// así, al cerrar el inspector o cambiar de sección, volver a pulsar la fila vuelve a abrir el detalle.
-    private var tableSelection: Binding<Set<PersistentIdentifier>> {
+    /// La selección de la tabla se deriva de `appState.selectedFeedbackId` (una sola fuente de verdad) y usa
+    /// el ID de Apple, que no cambia. El `persistentModelID` de SwiftData es temporal hasta que se guarda la
+    /// base de datos: con él, los elementos recién sincronizados no abrían el detalle al seleccionarlos.
+    private var tableSelection: Binding<Set<String>> {
         Binding(
             get: {
-                guard let id = appState.selectedFeedbackId,
-                      let item = filtered.first(where: { $0.appleId == id }) else { return [] }
-                return [item.persistentModelID]
+                guard let id = appState.selectedFeedbackId, filtered.contains(where: { $0.appleId == id }) else { return [] }
+                return [id]
             },
             set: { selection in
-                appState.selectedFeedbackId = filtered.first(where: { selection.contains($0.persistentModelID) })?.appleId
+                appState.selectedFeedbackId = selection.first
             }
         )
     }
@@ -168,15 +166,13 @@ struct FeedbackListView: View {
         }
     }
 
-    private func updateStatus(_ selection: Set<PersistentIdentifier>, to status: FeedbackStatus) {
-        for id in selection {
-            if let item = filtered.first(where: { $0.persistentModelID == id }) { item.status = status.rawValue }
-        }
+    private func updateStatus(_ selection: Set<String>, to status: FeedbackStatus) {
+        for item in filtered where selection.contains(item.appleId) { item.status = status.rawValue }
         try? modelContext.save()
     }
 
-    private func copyComment(_ selection: Set<PersistentIdentifier>) {
-        guard let id = selection.first, let item = filtered.first(where: { $0.persistentModelID == id }) else { return }
+    private func copyComment(_ selection: Set<String>) {
+        guard let id = selection.first, let item = filtered.first(where: { $0.appleId == id }) else { return }
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(item.comment ?? "", forType: .string)
     }
@@ -192,6 +188,18 @@ struct FeedbackListView: View {
 }
 
 private enum FeedbackLayout: Hashable { case table, gallery }
+
+/// Fila de la tabla identificada por el ID de Apple (estable), no por el `persistentModelID` de SwiftData.
+/// `@dynamicMemberLookup` permite que las columnas lean `feedback.campo` como si fuera un `Feedback`.
+@dynamicMemberLookup
+private struct FeedbackRow: Identifiable {
+    let feedback: Feedback
+    var id: String { feedback.appleId }
+
+    subscript<Value>(dynamicMember keyPath: KeyPath<Feedback, Value>) -> Value {
+        feedback[keyPath: keyPath]
+    }
+}
 
 private struct FeedbackCard: View {
     let feedback: Feedback

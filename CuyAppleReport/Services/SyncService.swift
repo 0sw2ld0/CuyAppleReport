@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 import SwiftData
 
 @MainActor
@@ -102,6 +103,15 @@ enum SyncService {
                         }
                     }
                 }
+                // Testers y grupos: si falla (p. ej. por permisos), no interrumpe la sincronización del feedback.
+                progress.phase = .testers
+                report(progress)
+                do {
+                    try await syncTesters(app: app, client: client, context: context)
+                } catch {
+                    logger.error("Testers de \(app.name, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                }
+
                 // Reintenta los logs de errores que quedaron sin descargar en sincronizaciones anteriores.
                 for crash in app.feedbacks where crash.kind == "Error" && crash.crashLogPath == nil {
                     if let log = try? await client.fetchCrashLog(submissionId: crash.appleId),
@@ -111,6 +121,8 @@ enum SyncService {
                 }
                 app.lastSyncAt = .now
                 run.finishedAt = .now
+                // Guardar por app: los elementos nuevos reciben su identificador definitivo cuanto antes.
+                try context.save()
             } catch {
                 run.errorMessage = error.localizedDescription
                 run.finishedAt = .now
@@ -122,6 +134,70 @@ enum SyncService {
         report(progress)
         try context.save()
         return totalNew
+    }
+
+    private static let logger = Logger(subsystem: "com.cuycoders.CuyAppleReport", category: "sync")
+
+    /// Grupos, testers (con su uso de 30 días) y última build de una app. Borra los que ya no existen.
+    static func syncTesters(app: MonitoredApp, client: AppStoreConnectClient, context: ModelContext) async throws {
+        let groups = try await client.fetchBetaGroups(appId: app.appleId)
+        let testers = try await client.fetchBetaTesters(appId: app.appleId)
+        let usage = (try? await client.fetchTesterUsage(appId: app.appleId)) ?? [:]
+        if let latest = try? await client.fetchLatestBuild(appId: app.appleId) {
+            app.latestVersion = latest.version
+            app.latestBuild = latest.build
+        }
+
+        let existingGroups = Dictionary(app.betaGroups.map { ($0.groupId, $0) }, uniquingKeysWith: { first, _ in first })
+        for group in groups {
+            let record = existingGroups[group.id] ?? {
+                let record = BetaGroupRecord(groupId: group.id, name: group.name, isInternal: group.isInternal, app: app)
+                context.insert(record)
+                return record
+            }()
+            record.name = group.name
+            record.isInternal = group.isInternal
+            record.publicLinkEnabled = group.publicLinkEnabled
+            record.publicLinkLimit = group.publicLinkLimit
+            record.feedbackEnabled = group.feedbackEnabled
+            record.createdDate = group.createdDate
+        }
+        let groupIds = Set(groups.map(\.id))
+        for stale in app.betaGroups where !groupIds.contains(stale.groupId) { context.delete(stale) }
+
+        let internalIds = Set(groups.filter(\.isInternal).map(\.id))
+        let externalIds = groupIds.subtracting(internalIds)
+        let existingTesters = Dictionary(app.testers.map { ($0.testerId, $0) }, uniquingKeysWith: { first, _ in first })
+        for tester in testers {
+            let record = existingTesters[tester.id] ?? {
+                let record = BetaTesterRecord(recordId: "\(app.appleId)|\(tester.id)", testerId: tester.id, app: app)
+                context.insert(record)
+                return record
+            }()
+            let appGroups = tester.groupIds.filter(groupIds.contains)
+            record.email = tester.email
+            record.firstName = tester.firstName
+            record.lastName = tester.lastName
+            record.stateRaw = tester.state
+            record.inviteType = tester.inviteType
+            record.installedVersion = tester.installedVersion
+            record.installedBuild = tester.installedBuild
+            record.installedDevice = tester.installedDevice
+            record.installedOsVersion = tester.installedOsVersion
+            record.numberOfInstalledDevices = tester.numberOfInstalledDevices
+            record.devices = tester.devices
+            record.groupIds = appGroups
+            record.isInternal = appGroups.contains(where: internalIds.contains)
+            record.isExternal = appGroups.contains(where: externalIds.contains) || tester.inviteType == "PUBLIC_LINK"
+            record.lastModifiedDate = tester.lastModifiedDate
+            let testerUsage = usage[tester.id]
+            record.sessions30 = testerUsage?.sessions ?? 0
+            record.crashes30 = testerUsage?.crashes ?? 0
+            record.feedback30 = testerUsage?.feedback ?? 0
+        }
+        let testerIds = Set(testers.map(\.id))
+        for stale in app.testers where !testerIds.contains(stale.testerId) { context.delete(stale) }
+        app.testersSyncedAt = .now
     }
 
     /// Las capturas ya descargadas se reutilizan si están todas en disco.

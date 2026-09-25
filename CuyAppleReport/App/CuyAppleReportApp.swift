@@ -14,6 +14,7 @@ struct CuyAppleReportApp: App {
         #endif
         do {
             modelContainer = try ModelContainer(for: Connection.self, MonitoredApp.self, Feedback.self, SyncRun.self,
+                                                BetaTesterRecord.self, BetaGroupRecord.self,
                                                 configurations: ModelConfiguration(isStoredInMemoryOnly: inMemory))
         } catch {
             fatalError("No se pudo iniciar la base de datos local: \(error)")
@@ -36,6 +37,7 @@ struct CuyAppleReportApp: App {
                 .task {
                     appState.requestNotifications()
                     #if DEBUG
+                    if ProcessInfo.processInfo.arguments.contains("--page-testers") { appState.page = .testers }
                     if DemoMode.isEnabled {
                         try? await Task.sleep(for: .seconds(2))
                         await DemoMode.runFakeSync(appState)

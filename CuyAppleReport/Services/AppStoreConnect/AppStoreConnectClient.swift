@@ -41,6 +41,39 @@ private struct ASCResource: Sendable {
     let rawJSON: Data?
 }
 
+struct ASCBetaGroup: Sendable {
+    let id: String
+    let name: String
+    let isInternal: Bool
+    let publicLinkEnabled: Bool
+    let publicLinkLimit: Int?
+    let feedbackEnabled: Bool
+    let createdDate: Date?
+}
+
+struct ASCBetaTester: Sendable {
+    let id: String
+    let email: String?
+    let firstName: String?
+    let lastName: String?
+    let state: String?
+    let inviteType: String?
+    let installedVersion: String?
+    let installedBuild: String?
+    let installedDevice: String?
+    let installedOsVersion: String?
+    let numberOfInstalledDevices: Int
+    let devices: [TesterDevice]
+    let groupIds: [String]
+    let lastModifiedDate: Date?
+}
+
+struct ASCTesterUsage: Sendable {
+    let sessions: Int
+    let crashes: Int
+    let feedback: Int
+}
+
 enum ASCError: LocalizedError {
     case invalidResponse
     case http(Int, String?)
@@ -227,6 +260,100 @@ actor AppStoreConnectClient {
             }
             continuation.onTermination = { _ in task.cancel() }
         }
+    }
+
+    // MARK: Testers y grupos
+
+    func fetchBetaGroups(appId: String) async throws -> [ASCBetaGroup] {
+        try await pages("/v1/apps/\(appId)/betaGroups?limit=200").flatMap { root in
+            (root["data"] as? [[String: Any]] ?? []).compactMap { item -> ASCBetaGroup? in
+                guard let id = item["id"] as? String, let attributes = item["attributes"] as? [String: Any] else { return nil }
+                return ASCBetaGroup(
+                    id: id, name: attributes["name"] as? String ?? "Grupo",
+                    isInternal: attributes["isInternalGroup"] as? Bool ?? false,
+                    publicLinkEnabled: attributes["publicLinkEnabled"] as? Bool ?? false,
+                    publicLinkLimit: (attributes["publicLinkLimitEnabled"] as? Bool ?? false) ? attributes["publicLinkLimit"] as? Int : nil,
+                    feedbackEnabled: attributes["feedbackEnabled"] as? Bool ?? false,
+                    createdDate: Self.date(attributes["createdDate"]))
+            }
+        }
+    }
+
+    func fetchBetaTesters(appId: String) async throws -> [ASCBetaTester] {
+        try await pages("/v1/betaTesters?filter%5Bapps%5D=\(appId)&include=betaGroups&limit=200").flatMap { root in
+            (root["data"] as? [[String: Any]] ?? []).compactMap { item -> ASCBetaTester? in
+                guard let id = item["id"] as? String, let attributes = item["attributes"] as? [String: Any] else { return nil }
+                let groups = ((item["relationships"] as? [String: Any])?["betaGroups"] as? [String: Any])?["data"] as? [[String: Any]] ?? []
+                let devices = (attributes["appDevices"] as? [[String: Any]] ?? []).map {
+                    TesterDevice(model: $0["model"] as? String, platform: $0["platform"] as? String,
+                                 osVersion: $0["osVersion"] as? String, appBuildVersion: $0["appBuildVersion"] as? String)
+                }
+                return ASCBetaTester(
+                    id: id, email: attributes["email"] as? String,
+                    firstName: attributes["firstName"] as? String, lastName: attributes["lastName"] as? String,
+                    state: attributes["betaTesterState"] as? String ?? attributes["state"] as? String,
+                    inviteType: attributes["inviteType"] as? String,
+                    installedVersion: attributes["installedCfBundleShortVersionString"] as? String,
+                    installedBuild: attributes["installedCfBundleVersion"] as? String,
+                    installedDevice: attributes["installedDevice"] as? String ?? attributes["latestInstalledDevice"] as? String,
+                    installedOsVersion: attributes["installedOsVersion"] as? String ?? attributes["latestInstalledOsVersion"] as? String,
+                    numberOfInstalledDevices: attributes["numberOfInstalledDevices"] as? Int ?? devices.count,
+                    devices: devices,
+                    groupIds: groups.compactMap { $0["id"] as? String },
+                    lastModifiedDate: Self.date(attributes["lastModifiedDate"]))
+            }
+        }
+    }
+
+    /// Sesiones, errores y feedback de cada tester en los últimos 30 días.
+    func fetchTesterUsage(appId: String) async throws -> [String: ASCTesterUsage] {
+        var usage: [String: ASCTesterUsage] = [:]
+        for root in try await pages("/v1/apps/\(appId)/metrics/betaTesterUsages?period=P30D&groupBy=betaTesters&limit=200") {
+            for item in root["data"] as? [[String: Any]] ?? [] {
+                guard let testerId = (((item["dimensions"] as? [String: Any])?["betaTesters"] as? [String: Any])?["data"] as? [String: Any])?["id"] as? String else { continue }
+                var sessions = 0, crashes = 0, feedback = 0
+                for point in item["dataPoints"] as? [[String: Any]] ?? [] {
+                    let values = point["values"] as? [String: Any] ?? [:]
+                    sessions += values["sessionCount"] as? Int ?? 0
+                    crashes += values["crashCount"] as? Int ?? 0
+                    feedback += values["feedbackCount"] as? Int ?? 0
+                }
+                usage[testerId] = ASCTesterUsage(sessions: sessions, crashes: crashes, feedback: feedback)
+            }
+        }
+        return usage
+    }
+
+    /// Versión y build de la última subida a TestFlight.
+    func fetchLatestBuild(appId: String) async throws -> (version: String?, build: String?) {
+        let path = "/v1/builds?filter%5Bapp%5D=\(appId)&sort=-uploadedDate&limit=1&include=preReleaseVersion&fields%5Bbuilds%5D=version,uploadedDate,preReleaseVersion&fields%5BpreReleaseVersions%5D=version"
+        guard let root = try JSONSerialization.jsonObject(with: try await transport.get(path)) as? [String: Any],
+              let build = (root["data"] as? [[String: Any]])?.first else { return (nil, nil) }
+        let number = (build["attributes"] as? [String: Any])?["version"] as? String
+        let preReleaseId = (((build["relationships"] as? [String: Any])?["preReleaseVersion"] as? [String: Any])?["data"] as? [String: Any])?["id"] as? String
+        let version = (root["included"] as? [[String: Any]] ?? [])
+            .first { ($0["id"] as? String) == preReleaseId }
+            .flatMap { ($0["attributes"] as? [String: Any])?["version"] as? String }
+        return (version, number)
+    }
+
+    /// Todas las páginas de un recurso (para respuestas cuyos elementos no tienen `id`, como las métricas).
+    private func pages(_ firstPath: String) async throws -> [[String: Any]] {
+        var roots: [[String: Any]] = []
+        var next: String? = firstPath
+        while let path = next {
+            guard let root = try JSONSerialization.jsonObject(with: try await transport.get(path)) as? [String: Any] else {
+                throw ASCError.invalidResponse
+            }
+            roots.append(root)
+            if let link = (root["links"] as? [String: Any])?["next"] as? String, !link.isEmpty {
+                guard let relative = transport.relativePath(fromNextLink: link) else { throw ASCError.pagination }
+                next = relative
+            } else {
+                next = nil
+            }
+        }
+        return roots
     }
 
     private static func date(_ value: Any?) -> Date? {

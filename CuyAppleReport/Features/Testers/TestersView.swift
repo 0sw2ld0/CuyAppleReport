@@ -7,6 +7,8 @@ import UniformTypeIdentifiers
 struct TesterItem: Identifiable, Hashable {
     let id: String
     let displayName: String
+    /// Nombre y apellido reales (nil si TestFlight solo tiene el correo).
+    let name: String?
     let email: String?
     let appName: String
     let groupIds: [String]
@@ -26,6 +28,9 @@ struct TesterItem: Identifiable, Hashable {
     let sessions: Int
     let crashes: Int
     let feedback: Int
+    /// Comentarios y errores enviados por este tester que están sincronizados en la app.
+    let commentReports: Int
+    let crashReports: Int
     let isExternal: Bool
     let isInternal: Bool
     let searchText: String
@@ -59,7 +64,11 @@ struct TestersView: View {
     /// Versiones instaladas elegidas (`nil` = todas).
     @State private var selectedVersions: Set<String>?
     @State private var exportDocument = ExportFile(data: Data(), contentType: .commaSeparatedText)
+    @State private var exportType: UTType = .commaSeparatedText
+    @State private var exportName = ""
     @State private var showExporter = false
+    @State private var showPDFSheet = false
+    @State private var exportError: String?
 
     enum Scope: String, CaseIterable, Identifiable {
         case external = "Externos"
@@ -119,10 +128,23 @@ struct TestersView: View {
         .task(id: snapshotKey) { rebuildSnapshot() }
         #if DEBUG
         .task { if ProcessInfo.processInfo.arguments.contains("--bench-testers") { await benchmark() } }
+        .task { if ProcessInfo.processInfo.arguments.contains("--export-testers-pdf") { await exportDemoPDF() } }
         #endif
         .searchable(text: $appState.searchQuery, prompt: "Buscar tester o dispositivo")
-        .fileExporter(isPresented: $showExporter, document: exportDocument, contentType: .commaSeparatedText,
-                      defaultFilename: "CuyAppleReport_Testers_\(Date.now.formatted(.iso8601.year().month().day()))") { _ in }
+        .fileExporter(isPresented: $showExporter, document: exportDocument, contentType: exportType,
+                      defaultFilename: exportName) { result in
+            if case .failure(let error) = result { exportError = error.localizedDescription }
+        }
+        .sheet(isPresented: $showPDFSheet) {
+            let base = items.filter(inScope).filter(matchesFiltersExceptVersion)
+            TestersPDFSheet(items: base, options: versionOptions(base), initialVersions: selectedVersions,
+                            filtersText: filtersText) { options in
+                exportPDF(base, options: options)
+            }
+        }
+        .alert("No se pudo exportar", isPresented: Binding(get: { exportError != nil }, set: { if !$0 { exportError = nil } })) {
+            Button("OK", role: .cancel) { exportError = nil }
+        } message: { Text(exportError ?? "") }
     }
 
     // MARK: Datos
@@ -136,6 +158,13 @@ struct TestersView: View {
             let names = Dictionary(appGroups.map { ($0.groupId, $0.name) }, uniquingKeysWith: { first, _ in first })
             var members: [String: Int] = [:]
             let latestBuild = app.latestBuild
+            // Reportes de cada tester (por correo) entre el feedback sincronizado de la app.
+            var comments: [String: Int] = [:]
+            var crashes: [String: Int] = [:]
+            for item in app.feedbacks {
+                guard let email = item.testerEmail?.lowercased() else { continue }
+                if item.kind == "Error" { crashes[email, default: 0] += 1 } else { comments[email, default: 0] += 1 }
+            }
             for tester in app.testers {
                 let groupIds = tester.groupIds
                 for id in groupIds { members[id, default: 0] += 1 }
@@ -144,8 +173,10 @@ struct TestersView: View {
                 let deviceName = tester.installedDevice.map { DeviceNames.marketingName($0) }
                 let name = tester.displayName
                 let groupNames = groupIds.compactMap { names[$0] }
+                let realName = [tester.firstName, tester.lastName].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " ")
+                let emailKey = tester.email?.lowercased() ?? ""
                 testerItems.append(TesterItem(
-                    id: tester.recordId, displayName: name, email: tester.email, appName: app.name,
+                    id: tester.recordId, displayName: name, name: realName.isEmpty ? nil : realName, email: tester.email, appName: app.name,
                     groupIds: groupIds, groupLabel: groupNames.isEmpty ? "—" : groupNames.joined(separator: ", "),
                     state: state, inviteType: tester.inviteType,
                     versionKey: installedLabel ?? TesterItem.notInstalled,
@@ -155,6 +186,7 @@ struct TestersView: View {
                     deviceCode: tester.installedDevice, deviceName: deviceName, osVersion: tester.installedOsVersion,
                     devices: tester.numberOfInstalledDevices,
                     sessions: tester.sessions30, crashes: tester.crashes30, feedback: tester.feedback30,
+                    commentReports: comments[emailKey] ?? 0, crashReports: crashes[emailKey] ?? 0,
                     isExternal: tester.isExternal, isInternal: tester.isInternal,
                     searchText: [name, tester.email, deviceName, tester.installedDevice].compactMap { $0 }.joined(separator: " ").lowercased(),
                     sortRank: Self.stateOrder(state)))
@@ -190,11 +222,25 @@ struct TestersView: View {
     }
 
     private func matchesFilters(_ tester: TesterItem) -> Bool {
+        (selectedVersions?.contains(tester.versionKey) ?? true) && matchesFiltersExceptVersion(tester)
+    }
+
+    /// Grupo, estado y búsqueda; el informe PDF elige las versiones en su propia hoja.
+    private func matchesFiltersExceptVersion(_ tester: TesterItem) -> Bool {
         let query = appState.searchQuery.trimmingCharacters(in: .whitespaces).lowercased()
         return (selectedGroup == "Todos" || tester.groupIds.contains(selectedGroup)) &&
             (selectedState == "Todos" || tester.state?.rawValue == selectedState) &&
-            (selectedVersions?.contains(tester.versionKey) ?? true) &&
             (query.isEmpty || tester.searchText.contains(query))
+    }
+
+    /// Filtros activos en lenguaje llano, para la portada del informe.
+    private var filtersText: String {
+        var parts = ["Testers \(scope == .all ? "internos y externos" : scope.rawValue.lowercased())"]
+        if selectedGroup != "Todos", let group = groups.first(where: { $0.id == selectedGroup }) { parts.append("grupo \(group.name)") }
+        if let state = TesterState(rawValue: selectedState) { parts.append("estado \(state.title.lowercased())") }
+        let query = appState.searchQuery.trimmingCharacters(in: .whitespaces)
+        if !query.isEmpty { parts.append("búsqueda “\(query)”") }
+        return parts.joined(separator: " · ")
     }
 
     private func versionOptions(_ scoped: [TesterItem]) -> [VersionOptions.Option] {
@@ -237,6 +283,8 @@ struct TestersView: View {
                 Text("\(visible.count.formatted()) testers").font(.caption).foregroundStyle(.secondary).fixedSize()
                 Button { exportCSV(visible) } label: { Label("Exportar CSV", systemImage: "square.and.arrow.up") }
                     .disabled(visible.isEmpty)
+                Button { showPDFSheet = true } label: { Label("Informe PDF", systemImage: "doc.richtext") }
+                    .disabled(scoped.isEmpty)
             }
             .padding(.horizontal, 18).padding(.vertical, 10)
         }
@@ -435,6 +483,23 @@ struct TestersView: View {
         print("BENCH fin")
         exit(0)
     }
+
+    /// Escribe el informe PDF de testers en la carpeta temporal (con y sin correos) y cierra la app.
+    private func exportDemoPDF() async {
+        while !loaded { try? await Task.sleep(for: .milliseconds(100)) }
+        scope = .all
+        let base = items
+        for includeEmails in [false, true] {
+            let options = TestersPDFOptions(versions: Set(base.map(\.versionKey)), includeEmails: includeEmails, listMode: .all)
+            let url = FileManager.default.temporaryDirectory.appending(path: "demo-testers\(includeEmails ? "-emails" : "").pdf")
+            if let data = try? TestersPDFRenderer.render(testers: base, appNames: apps.map(\.name).joined(separator: " · "),
+                                                        filtersText: filtersText, latestLabel: latestLabel, options: options) {
+                try? data.write(to: url)
+                print("TESTERS_PDF_WRITTEN \(url.path) \(data.count)")
+            }
+        }
+        exit(0)
+    }
     #endif
 
     // MARK: Utilidades
@@ -461,19 +526,37 @@ struct TestersView: View {
 
     private func exportCSV(_ visible: [TesterItem]) {
         let headers = ["tester", "email", "app", "grupos", "externo", "estado", "invitacion", "version_instalada",
-                       "build_instalada", "al_dia", "modelo", "dispositivo", "ios", "dispositivos", "sesiones_30d", "errores_30d", "feedback_30d"]
+                       "build_instalada", "al_dia", "modelo", "dispositivo", "ios", "dispositivos", "sesiones_30d", "errores_30d", "feedback_30d",
+                       "comentarios_enviados", "errores_enviados"]
         let rows = visible.map { tester -> [String] in
             [tester.displayName, tester.email ?? "", tester.appName, tester.groupLabel,
              tester.isExternal ? "sí" : "no", tester.state?.title ?? "", tester.inviteType == "PUBLIC_LINK" ? "Enlace público" : "Email",
              tester.installedVersion ?? "", tester.installedBuild ?? "", tester.isUpToDate ? "sí" : "no",
              tester.deviceName ?? "", tester.deviceCode ?? "", tester.osVersion ?? "", "\(tester.devices)",
-             "\(tester.sessions)", "\(tester.crashes)", "\(tester.feedback)"]
+             "\(tester.sessions)", "\(tester.crashes)", "\(tester.feedback)",
+             "\(tester.commentReports)", "\(tester.crashReports)"]
         }
         let body = ([headers] + rows)
             .map { $0.map { "\"" + $0.replacingOccurrences(of: "\"", with: "\"\"") + "\"" }.joined(separator: ",") }
             .joined(separator: "\r\n")
         exportDocument = ExportFile(data: Data([0xEF, 0xBB, 0xBF] + Array(body.utf8)), contentType: .commaSeparatedText)
+        exportType = .commaSeparatedText
+        exportName = "CuyAppleReport_Testers_\(Date.now.formatted(.iso8601.year().month().day()))"
         showExporter = true
+    }
+
+    private func exportPDF(_ base: [TesterItem], options: TestersPDFOptions) {
+        do {
+            let chosen = base.filter { options.versions.contains($0.versionKey) }
+            let appNames = Array(Set(apps.map(\.name))).sorted().joined(separator: " · ")
+            let data = try TestersPDFRenderer.render(testers: chosen, appNames: appNames, filtersText: filtersText,
+                                                     latestLabel: latestLabel, options: options)
+            exportDocument = ExportFile(data: data, contentType: .pdf)
+            exportType = .pdf
+            let safeName = (apps.count == 1 ? apps[0].name : "Todas").replacingOccurrences(of: "[^A-Za-z0-9_-]", with: "_", options: .regularExpression)
+            exportName = "CuyAppleReport_Testers_\(safeName)_\(Date.now.formatted(.iso8601.year().month().day()))"
+            showExporter = true
+        } catch { exportError = error.localizedDescription }
     }
 }
 

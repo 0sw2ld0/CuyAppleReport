@@ -34,7 +34,7 @@ El certificado se usa solo para dominios de Apple y solo cuando la validación n
 - JWT ES256, Keychain, SwiftData y cliente paginado de App Store Connect.
 - Sincronización manual e incremental y periódica mientras la app siga abierta en ventana o barra de menús; notificaciones y resumen de barra de menús.
 - Dashboard, tabla/galería, búsqueda, filtros de fecha, versiones (selección múltiple), build, tester, SO, dispositivo y estado; columna con el nombre real del iPhone (`iPhone14_2` → iPhone 13 Pro); inspector con notas y seguimiento.
-- **Testers de TestFlight**: testers externos e internos, estado de las invitaciones y tasa de aceptación, versión y build instaladas (quién tiene la última), dispositivo, grupos con enlace público y uso de los últimos 30 días (sesiones, errores y feedback); exportación a CSV.
+- **Testers de TestFlight**: testers externos e internos, estado de las invitaciones y tasa de aceptación, versión y build instaladas (quién tiene la última), dispositivo, grupos con enlace público y uso de los últimos 30 días (sesiones, errores y feedback); exportación a CSV e **informe PDF** con casillas para elegir las versiones instaladas, gráficos de modelos de iPhone e iOS por versión, quién envió comentarios o errores y opción de excluir los correos.
 - Exportación de la vista actual (eligiendo qué versiones de la app incluir) a CSV UTF-8 con BOM, Excel `.xlsx` multihoja y un informe PDF con portada, resumen con gráficos, comentarios con capturas y el detalle de cada error (explicación en lenguaje sencillo, motivo del cierre y dónde falló).
 
 ## Requisitos

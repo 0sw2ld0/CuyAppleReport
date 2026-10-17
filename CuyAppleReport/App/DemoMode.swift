@@ -131,9 +131,10 @@ enum DemoMode {
         for (index, person) in people.enumerated() {
             let tester = BetaTesterRecord(recordId: "demo|t\(index)", testerId: "t\(index)", app: app)
             let parts = person.0.split(separator: " ")
-            tester.firstName = String(parts[0])
-            tester.lastName = String(parts[1])
-            tester.email = "\(parts[0].lowercased())@example.com"
+            // Lucía queda sin nombre (como algunos testers de enlace público); los primeros coinciden con el feedback demo.
+            tester.firstName = index == 6 ? nil : String(parts[0])
+            tester.lastName = index == 6 ? nil : String(parts[1])
+            tester.email = index < 6 ? "tester\(index)@example.com" : "\(parts[0].lowercased())@example.com"
             tester.stateRaw = person.1.rawValue
             tester.inviteType = index == 4 ? "PUBLIC_LINK" : "EMAIL"
             tester.installedVersion = person.2

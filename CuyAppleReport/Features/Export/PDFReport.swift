@@ -15,16 +15,23 @@ enum PDFReportRenderer {
     static func render(feedback: [Feedback], anonymizeEmails: Bool) throws -> Data {
         let report = ReportModel(feedback: feedback, anonymize: anonymizeEmails)
         let pages = report.pages
+        return try renderPages(title: "Informe de feedback TestFlight", count: pages.count) { index in
+            ReportPageView(page: pages[index], report: report, number: index + 1, total: pages.count)
+        }
+    }
+
+    /// Dibuja cada página (vista SwiftUI de tamaño A4) como una página vectorial del PDF.
+    static func renderPages<Page: View>(title: String, count: Int, page: (Int) -> Page) throws -> Data {
         let data = NSMutableData()
         var mediaBox = CGRect(origin: .zero, size: pageSize)
-        let info = [kCGPDFContextTitle: "Informe de feedback TestFlight",
+        let info = [kCGPDFContextTitle: title,
                     kCGPDFContextCreator: "CuyAppleReport"] as CFDictionary
         guard let consumer = CGDataConsumer(data: data as CFMutableData),
               let context = CGContext(consumer: consumer, mediaBox: &mediaBox, info) else {
             throw ExportError.couldNotCreate
         }
-        for (index, page) in pages.enumerated() {
-            let view = ReportPageView(page: page, report: report, number: index + 1, total: pages.count)
+        for index in 0..<count {
+            let view = page(index)
                 .frame(width: pageSize.width, height: pageSize.height)
                 .background(RP.paper)
                 .environment(\.colorScheme, .light)
@@ -285,10 +292,10 @@ private struct ReportPageView: View {
         case .cover:
             CoverPage(report: report)
         case .summary:
-            PageScaffold(report: report, number: number, total: total,
+            PageScaffold(appNames: report.appNames, number: number, total: total,
                          eyebrow: "RESUMEN", title: "Así va el feedback de los testers") { SummaryContent(report: report) }
         case .comments(let items, let isFirst):
-            PageScaffold(report: report, number: number, total: total,
+            PageScaffold(appNames: report.appNames, number: number, total: total,
                          eyebrow: "COMENTARIOS", title: isFirst ? "Lo que dicen los testers" : nil) {
                 VStack(spacing: 14) {
                     ForEach(items) { CommentCard(item: $0, total: report.comments.count) }
@@ -296,7 +303,7 @@ private struct ReportPageView: View {
                 }
             }
         case .crashes(let items, let isFirst):
-            PageScaffold(report: report, number: number, total: total,
+            PageScaffold(appNames: report.appNames, number: number, total: total,
                          eyebrow: "ESTABILIDAD", title: isFirst ? "Errores reportados" : nil) {
                 CrashesContent(items: items, report: report, showSummary: isFirst)
             }
@@ -304,8 +311,8 @@ private struct ReportPageView: View {
     }
 }
 
-private struct PageScaffold<Content: View>: View {
-    let report: ReportModel
+struct PageScaffold<Content: View>: View {
+    let appNames: String
     let number: Int
     let total: Int
     let eyebrow: String
@@ -320,7 +327,7 @@ private struct PageScaffold<Content: View>: View {
                 Text("CuyAppleReport").font(.system(size: 10, weight: .semibold)).foregroundStyle(RP.ink)
                 Text("Informe TestFlight").font(.system(size: 10)).foregroundStyle(RP.muted)
                 Spacer()
-                Text(report.appNames).font(.system(size: 10, weight: .medium)).foregroundStyle(RP.muted).lineLimit(1)
+                Text(appNames).font(.system(size: 10, weight: .medium)).foregroundStyle(RP.muted).lineLimit(1)
             }
             Rectangle().fill(RP.brand).frame(height: 2).padding(.top, 10)
 
@@ -406,7 +413,7 @@ private struct CoverPage: View {
     }
 }
 
-private struct KPI: View {
+struct KPI: View {
     let value: Int
     let label: String
     let color: Color
@@ -470,7 +477,7 @@ private struct SummaryContent: View {
     }
 }
 
-private struct Card<Content: View>: View {
+struct Card<Content: View>: View {
     let title: String
     @ViewBuilder let content: Content
 
@@ -485,7 +492,7 @@ private struct Card<Content: View>: View {
     }
 }
 
-private struct RankBars: View {
+struct RankBars: View {
     let items: [Ranked]
     let color: Color
 

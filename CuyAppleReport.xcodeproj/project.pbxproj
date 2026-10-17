@@ -24,6 +24,7 @@
 		5797093EEC21C74576AD4FE7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1AF9E4A6C5888A29298D99BD /* Assets.xcassets */; };
 		670A6E2E7A168432F69FDA07 /* AppStoreConnectClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03979401676635AA3317AD36 /* AppStoreConnectClient.swift */; };
 		6BF269A7282373ED1AE5135C /* ConnectionSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AF468EA4BF360623D82F119 /* ConnectionSettingsView.swift */; };
+		8A13F58F85C506629E523A44 /* TestersPDFReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB2A5C98A22236D42D93EAEA /* TestersPDFReport.swift */; };
 		94CD154433264AACA0AAD642 /* WebSessionTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0A8FBB4E3A070B41CAE7DE8 /* WebSessionTransport.swift */; };
 		9D44393C63026A0C8DB8CE77 /* ExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 577821DFAAD37611AE95EEF5 /* ExportService.swift */; };
 		A01CDD4F909DD9E6A9A0EC17 /* CorporateCertificateSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = A921B73240DA12E56BDE9D3F /* CorporateCertificateSection.swift */; };
@@ -70,6 +71,7 @@
 		B0A8FBB4E3A070B41CAE7DE8 /* WebSessionTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebSessionTransport.swift; sourceTree = "<group>"; };
 		B50C172F9DAABB8A19E02158 /* CorporateTrust.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CorporateTrust.swift; sourceTree = "<group>"; };
 		C375AFF37F4E62C8C0E7908D /* ScreenshotViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotViews.swift; sourceTree = "<group>"; };
+		CB2A5C98A22236D42D93EAEA /* TestersPDFReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestersPDFReport.swift; sourceTree = "<group>"; };
 		CE651E7F50AB7BFA367CE5F3 /* CuyAppleReport.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CuyAppleReport.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D360B8EAC69DD8DEA2CA6472 /* PDFReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFReport.swift; sourceTree = "<group>"; };
 		E571CF59BE614288CFC6FA02 /* CrashLogSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashLogSummary.swift; sourceTree = "<group>"; };
@@ -100,6 +102,7 @@
 		218AB37F723CD6634F1EEA9C /* Testers */ = {
 			isa = PBXGroup;
 			children = (
+				CB2A5C98A22236D42D93EAEA /* TestersPDFReport.swift */,
 				731ECA9BC6F94AA7849FBDEE /* TestersView.swift */,
 			);
 			path = Testers;
@@ -323,6 +326,7 @@
 				467C8AEF74FC8CF69BF405F2 /* SyncProgress.swift in Sources */,
 				B073418754F82223E1E677B5 /* SyncProgressViews.swift in Sources */,
 				D1C6E2B15782B1A41D4C135B /* SyncService.swift in Sources */,
+				8A13F58F85C506629E523A44 /* TestersPDFReport.swift in Sources */,
 				11D1DD0B53E5E9B3F3E0F972 /* TestersView.swift in Sources */,
 				F04E311A3131A322C65BFC25 /* VersionSelection.swift in Sources */,
 				94CD154433264AACA0AAD642 /* WebSessionTransport.swift in Sources */,

@@ -121,6 +121,14 @@ enum DemoMode {
                     tester.installedDevice = models[index % models.count]
                     tester.installedOsVersion = "26.\(index % 6)"
                     tester.numberOfInstalledDevices = 1
+                    // Las builds nuevas se instalan más recientemente: curva de adopción realista.
+                    let age = Double((65 - build) * 9 + index % 9)
+                    tester.lastModifiedDate = .now.addingTimeInterval(-age * 86_400)
+                    if build >= 63 {
+                        // Antes tenía la 1.0 (62): queda en el historial.
+                        context.insert(TesterInstallEvent(eventId: "\(app.appleId)|b\(index)|62", testerRecordId: "bench|\(index)",
+                                                          version: "1.0", build: "62", date: .now.addingTimeInterval(-(age + 20) * 86_400), app: app))
+                    }
                 }
                 tester.isExternal = true
                 tester.groupIds = ["demo-ext"]
@@ -142,6 +150,7 @@ enum DemoMode {
             tester.installedDevice = person.4
             tester.installedOsVersion = person.4 == nil ? nil : "26.\(index % 3)"
             tester.numberOfInstalledDevices = person.4 == nil ? 0 : (index == 1 ? 2 : 1)
+            tester.lastModifiedDate = .now.addingTimeInterval(-Double(index * 3 + 1) * 86_400)
             tester.isExternal = person.5
             tester.isInternal = !person.5
             tester.groupIds = [person.5 ? "demo-ext" : "demo-int"]

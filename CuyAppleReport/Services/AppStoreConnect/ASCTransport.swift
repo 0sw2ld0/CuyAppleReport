@@ -36,7 +36,14 @@ enum ASCHTTP {
         throw ASCError.http(status, detail)
     }
 
-    static func shouldRetry(_ status: Int) -> Bool { status == 429 || status == 503 }
+    /// 429 y 503 son temporales; un 500/502/504 de Apple a veces también, así que se reintenta una vez.
+    static func shouldRetry(_ status: Int, attempt: Int) -> Bool {
+        switch status {
+        case 429, 503: attempt < 4
+        case 500, 502, 504: attempt < 1
+        default: false
+        }
+    }
 
     static func backoff(attempt: Int) async throws {
         try await Task.sleep(nanoseconds: UInt64(1 << attempt) * 1_000_000_000)
@@ -65,7 +72,7 @@ struct APIKeyTransport: ASCTransport {
             do {
                 let (data, response) = try await session.data(for: request)
                 guard let http = response as? HTTPURLResponse else { throw ASCError.invalidResponse }
-                if ASCHTTP.shouldRetry(http.statusCode), attempt < 4 {
+                if ASCHTTP.shouldRetry(http.statusCode, attempt: attempt) {
                     try await ASCHTTP.backoff(attempt: attempt)
                     continue
                 }

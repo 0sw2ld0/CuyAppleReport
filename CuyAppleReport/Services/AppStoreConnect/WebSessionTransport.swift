@@ -72,7 +72,7 @@ final class WebSessionTransport: ASCTransport, @unchecked Sendable {
     func get(_ path: String) async throws -> Data {
         for attempt in 0..<5 {
             let (status, data) = try await request(method: "GET", path: "/iris" + path, body: nil)
-            if ASCHTTP.shouldRetry(status), attempt < 4 {
+            if ASCHTTP.shouldRetry(status, attempt: attempt) {
                 try await ASCHTTP.backoff(attempt: attempt)
                 continue
             }

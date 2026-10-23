@@ -32,6 +32,7 @@ enum SyncService {
         let selectedApps = connection.apps.filter(\.isMonitored)
         progress.appCount = selectedApps.count
         var totalNew = 0
+        var failures: [String] = []
 
         for (index, app) in selectedApps.enumerated() {
             progress.appIndex = index
@@ -40,11 +41,25 @@ enum SyncService {
             progress.imagesTotal = 0
             let run = SyncRun(appleAppId: app.appleId)
             context.insert(run)
+            var appFailures: [String] = []
             do {
                 for kind in ["Comentario", "Error"] {
                     progress.phase = kind == "Comentario" ? .comments : .crashes
                     report(progress)
-                    let remoteItems = try await client.fetchFeedback(appId: app.appleId, kind: kind, since: app.lastSyncAt)
+                    // Si falla una parte (p. ej. un error del servidor de Apple), se sigue con las demás.
+                    let remoteItems: [ASCFeedback]
+                    do {
+                        remoteItems = try await client.fetchFeedback(appId: app.appleId, kind: kind, since: app.lastSyncAt)
+                    } catch ASCError.sessionExpired {
+                        throw ASCError.sessionExpired
+                    } catch is CancellationError {
+                        throw CancellationError()
+                    } catch {
+                        let part = kind == "Comentario" ? "comentarios" : "errores"
+                        logger.error("\(part, privacy: .public) de \(app.name, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                        appFailures.append("\(app.name) · \(part): \(error.localizedDescription)")
+                        continue
+                    }
                     progress.found += remoteItems.count
                     let existingItems = try context.fetch(FetchDescriptor<Feedback>())
                     let byID = Dictionary(uniqueKeysWithValues: existingItems.map { ($0.appleId, $0) })
@@ -119,26 +134,58 @@ enum SyncService {
                         crash.crashLogPath = path.path
                     }
                 }
-                app.lastSyncAt = .now
+                // Con una parte fallida no se avanza la fecha, para volver a pedir lo que faltó.
+                if appFailures.isEmpty { app.lastSyncAt = .now }
+                run.errorMessage = appFailures.isEmpty ? nil : appFailures.joined(separator: "\n")
+                failures += appFailures
                 run.finishedAt = .now
                 // Guardar por app: los elementos nuevos reciben su identificador definitivo cuanto antes.
                 try context.save()
+            } catch ASCError.sessionExpired {
+                run.errorMessage = ASCError.sessionExpired.localizedDescription
+                run.finishedAt = .now
+                try? context.save()
+                throw ASCError.sessionExpired
             } catch {
+                // Un fallo en una app no impide sincronizar las demás.
                 run.errorMessage = error.localizedDescription
                 run.finishedAt = .now
                 try? context.save()
-                throw error
+                if error is CancellationError { throw error }
+                failures.append("\(app.name): \(error.localizedDescription)")
             }
         }
         progress.phase = .saving
         report(progress)
         try context.save()
+        if !failures.isEmpty { throw PartialSyncError(failures: failures, newItems: totalNew) }
         return totalNew
     }
 
     private static let logger = Logger(subsystem: "com.cuycoders.CuyAppleReport", category: "sync")
 
     /// Grupos, testers (con su uso de 30 días) y última build de una app. Borra los que ya no existen.
+    /// Guarda la instalación actual de cada tester (build + fecha). Las de builds anteriores se conservan
+    /// aunque el tester ya haya actualizado o salido de TestFlight: son la historia del evolutivo.
+    static func recordInstalls(_ testers: [ASCBetaTester], app: MonitoredApp, context: ModelContext) {
+        var events = Dictionary(app.installEvents.map { ($0.eventId, $0) }, uniquingKeysWith: { first, _ in first })
+        for tester in testers {
+            guard let build = tester.installedBuild, let date = tester.lastModifiedDate else { continue }
+            let recordId = "\(app.appleId)|\(tester.id)"
+            let eventId = "\(recordId)|\(build)"
+            if let event = events[eventId] {
+                // Otros cambios del tester también mueven la fecha: se queda la más antigua.
+                if date < event.date { event.date = date }
+                if event.version == nil { event.version = tester.installedVersion }
+            } else {
+                let event = TesterInstallEvent(eventId: eventId, testerRecordId: recordId, version: tester.installedVersion,
+                                               build: build, date: date, app: app)
+                context.insert(event)
+                events[eventId] = event
+            }
+        }
+    }
+
     static func syncTesters(app: MonitoredApp, client: AppStoreConnectClient, context: ModelContext) async throws {
         let groups = try await client.fetchBetaGroups(appId: app.appleId)
         let testers = try await client.fetchBetaTesters(appId: app.appleId)
@@ -197,6 +244,7 @@ enum SyncService {
         }
         let testerIds = Set(testers.map(\.id))
         for stale in app.testers where !testerIds.contains(stale.testerId) { context.delete(stale) }
+        recordInstalls(testers, app: app, context: context)
         app.testersSyncedAt = .now
     }
 
@@ -233,5 +281,16 @@ enum SyncService {
             }
             return paths.compactMap { $0 }
         }
+    }
+}
+
+/// Se sincronizó lo posible, pero alguna parte falló.
+struct PartialSyncError: LocalizedError {
+    let failures: [String]
+    let newItems: Int
+
+    var errorDescription: String? {
+        let saved = newItems == 1 ? "Se guardó 1 elemento nuevo" : "Se guardaron \(newItems) elementos nuevos"
+        return "\(saved), pero no se pudo sincronizar todo:\n" + failures.joined(separator: "\n")
     }
 }

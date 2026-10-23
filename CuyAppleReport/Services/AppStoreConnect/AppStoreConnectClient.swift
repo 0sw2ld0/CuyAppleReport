@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 
 struct ASCApp: Identifiable, Hashable, Sendable {
     let id: String
@@ -215,7 +216,7 @@ actor AppStoreConnectClient {
                 do {
                     var nextPath: String? = firstPath
                     while let path = nextPath {
-                        let data = try await self.transport.get(path)
+                        let data = try await self.feedbackPage(path)
                         guard let root = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
                             throw ASCError.invalidResponse
                         }
@@ -338,6 +339,42 @@ actor AppStoreConnectClient {
     }
 
     /// Todas las páginas de un recurso (para respuestas cuyos elementos no tienen `id`, como las métricas).
+    private static let logger = Logger(subsystem: "com.cuycoders.CuyAppleReport", category: "api")
+
+    /// Pide una página de feedback. Si Apple responde con un error de servidor (5xx), prueba versiones
+    /// más ligeras de la misma petición: páginas más pequeñas y sin los datos incluidos del tester o la build,
+    /// que son lo que suele hacer fallar a App Store Connect con algún elemento concreto.
+    private func feedbackPage(_ path: String) async throws -> Data {
+        do {
+            return try await transport.get(path)
+        } catch ASCError.http(let status, let detail) where status >= 500 {
+            Self.logger.error("HTTP \(status) en \(path, privacy: .public)")
+            for variant in Self.lighterVariants(of: path) {
+                do {
+                    let data = try await transport.get(variant)
+                    Self.logger.notice("Recuperado con \(variant, privacy: .public)")
+                    return data
+                } catch ASCError.http(let code, _) where code >= 500 {
+                    Self.logger.error("HTTP \(code) en \(variant, privacy: .public)")
+                    continue
+                }
+            }
+            throw ASCError.http(status, detail)
+        }
+    }
+
+    static func lighterVariants(of path: String) -> [String] {
+        func replacing(_ pattern: String, with value: String, in text: String) -> String {
+            text.replacingOccurrences(of: pattern, with: value, options: .regularExpression)
+        }
+        let smaller = replacing("limit=\\d+", with: "limit=50", in: path)
+        let onlyBuild = replacing("include=[^&]*", with: "include=build", in: smaller)
+        let noInclude = replacing("&?include=[^&]*", with: "", in: smaller)
+        let tiny = replacing("limit=\\d+", with: "limit=10", in: noInclude)
+        var seen: Set<String> = [path]
+        return [smaller, onlyBuild, noInclude, tiny].filter { seen.insert($0).inserted }
+    }
+
     private func pages(_ firstPath: String) async throws -> [[String: Any]] {
         var roots: [[String: Any]] = []
         var next: String? = firstPath

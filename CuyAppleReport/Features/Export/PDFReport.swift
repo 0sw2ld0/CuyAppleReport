@@ -71,6 +71,11 @@ enum RP {
         date.formatted(Date.FormatStyle(date: dateStyle, time: time, locale: locale))
     }
 
+    /// "17/10/26"
+    static func shortDate(_ date: Date) -> String {
+        date.formatted(Date.FormatStyle(locale: locale).day(.twoDigits).month(.twoDigits).year(.twoDigits))
+    }
+
     static func status(_ status: String) -> Color {
         switch status {
         case FeedbackStatus.resolved.rawValue: green

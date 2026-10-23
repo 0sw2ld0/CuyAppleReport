@@ -81,9 +81,9 @@ struct TestersPDFSheet: View {
 
 @MainActor
 enum TestersPDFRenderer {
-    static func render(testers: [TesterItem], appNames: String, filtersText: String,
+    static func render(testers: [TesterItem], installs: [InstallItem], appNames: String, filtersText: String,
                        latestLabel: String?, options: TestersPDFOptions) throws -> Data {
-        let report = TestersReport(testers: testers, appNames: appNames, filtersText: filtersText,
+        let report = TestersReport(testers: testers, installs: installs, appNames: appNames, filtersText: filtersText,
                                    latestLabel: latestLabel, options: options)
         let pages = report.pages
         return try PDFReportRenderer.renderPages(title: "Informe de testers TestFlight", count: pages.count) { index in
@@ -126,6 +126,8 @@ struct TesterRow: Identifiable {
     let email: String?
     let state: String
     let version: String
+    let build: String?
+    let installedDate: Date?
     let model: String
     let os: String
     let sessions: Int
@@ -136,6 +138,8 @@ struct TesterRow: Identifiable {
 enum TestersPage {
     case summary
     case reports
+    case evolution
+    case daily
     case versions([VersionGroup], isFirst: Bool)
     case list([TesterRow], isFirst: Bool)
 }
@@ -147,6 +151,9 @@ struct TestersReport {
     let latestLabel: String?
     let includeEmails: Bool
     let listMode: TesterListMode
+    let timeline: InstallTimeline
+    let adoption: [AdoptionRow]
+    let daily: [DailyInstallRow]
 
     let total: Int
     let installed: Int
@@ -179,7 +186,11 @@ struct TestersReport {
     }
     var anyReports: Bool { totalComments + totalCrashes > 0 }
 
-    init(testers: [TesterItem], appNames: String, filtersText: String, latestLabel: String?, options: TestersPDFOptions) {
+    init(testers: [TesterItem], installs: [InstallItem], appNames: String, filtersText: String,
+         latestLabel: String?, options: TestersPDFOptions) {
+        timeline = InstallTimeline(installs: installs, period: .all, maxSeries: 6)
+        adoption = AdoptionRow.rows(installs, limit: 10)
+        daily = DailyInstallRow.rows(installs)
         self.appNames = appNames
         self.filtersText = filtersText
         self.latestLabel = latestLabel
@@ -310,7 +321,9 @@ struct TestersReport {
         rows = listed.map { tester in
             TesterRow(id: tester.id, name: Self.name(tester),
                       email: options.includeEmails ? tester.email : nil,
-                      state: tester.state?.title ?? "—", version: tester.isInstalled ? tester.versionKey : "—",
+                      state: tester.state?.title ?? "—",
+                      version: tester.isInstalled ? (tester.installedVersion.map { "v\($0)" } ?? "Build") : "—",
+                      build: tester.isInstalled ? tester.installedBuild : nil, installedDate: tester.installedDate,
                       model: tester.deviceName ?? "—", os: tester.osVersion ?? "—", sessions: tester.sessions,
                       comments: tester.commentReports, crashes: tester.crashReports)
         }
@@ -318,8 +331,9 @@ struct TestersReport {
 
     var pages: [TestersPage] {
         var pages: [TestersPage] = [.summary, .reports]
+        if !timeline.isEmpty { pages += [.evolution, .daily] }
         pages += Self.chunks(versionGroups, first: 4, rest: 5).enumerated().map { .versions($0.element, isFirst: $0.offset == 0) }
-        pages += Self.chunks(rows, first: 33, rest: 37).enumerated().map { .list($0.element, isFirst: $0.offset == 0) }
+        pages += Self.chunks(rows, first: includeEmails ? 25 : 30, rest: includeEmails ? 27 : 32).enumerated().map { .list($0.element, isFirst: $0.offset == 0) }
         return pages
     }
 
@@ -377,6 +391,12 @@ private struct TestersPageView: View {
         case .reports:
             PageScaffold(appNames: report.appNames, number: number, total: total,
                          eyebrow: "REPORTES", title: "¿Quién envió comentarios o errores?") { TestersReports(report: report) }
+        case .evolution:
+            PageScaffold(appNames: report.appNames, number: number, total: total,
+                         eyebrow: "EVOLUCIÓN", title: "Cómo se instalaron las versiones") { TestersEvolution(report: report) }
+        case .daily:
+            PageScaffold(appNames: report.appNames, number: number, total: total,
+                         eyebrow: "ÚLTIMOS 30 DÍAS", title: "Testers con la app, día a día") { TestersDaily(rows: report.daily) }
         case .versions(let groups, let isFirst):
             PageScaffold(appNames: report.appNames, number: number, total: total,
                          eyebrow: "POR VERSIÓN", title: isFirst ? "Qué iPhone e iOS usa cada versión" : nil) {
@@ -618,42 +638,156 @@ private struct TesterTable: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            line(header: true, name: "Tester", email: "Correo", state: "Estado", version: "Versión",
-                 model: "iPhone", os: "iOS", sessions: "Ses.", comments: "Com.", crashes: "Err.")
-                .background(RP.faint)
+            HStack(spacing: 6) {
+                Text("Tester").frame(maxWidth: .infinity, alignment: .leading)
+                Text("Estado").frame(width: 50, alignment: .leading)
+                Text("Versión").frame(width: 78, alignment: .leading)
+                Text("iPhone").frame(width: 84, alignment: .leading)
+                Text("iOS").frame(width: 28, alignment: .leading)
+                Text("Instalada").frame(width: 44, alignment: .leading)
+                Text("Ses.").frame(width: 26, alignment: .trailing)
+                Text("Com.").frame(width: 24, alignment: .trailing)
+                Text("Err.").frame(width: 24, alignment: .trailing)
+            }
+            .font(.system(size: 8, weight: .bold))
+            .foregroundStyle(RP.muted)
+            .padding(.horizontal, 6)
+            .frame(height: 20)
+            .background(RP.faint)
             ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
-                line(header: false, name: row.name, email: row.email ?? "—", state: row.state, version: row.version,
-                     model: row.model, os: row.os, sessions: "\(row.sessions)", comments: "\(row.comments)", crashes: "\(row.crashes)",
-                     highlightComments: row.comments > 0, highlightCrashes: row.crashes > 0)
-                    .background(index.isMultiple(of: 2) ? Color.clear : RP.faint.opacity(0.6))
+                line(row).background(index.isMultiple(of: 2) ? Color.clear : RP.faint.opacity(0.6))
             }
             Spacer(minLength: 0)
         }
     }
 
-    private func line(header: Bool, name: String, email: String, state: String, version: String, model: String,
-                      os: String, sessions: String, comments: String, crashes: String,
-                      highlightComments: Bool = false, highlightCrashes: Bool = false) -> some View {
-        let weight: Font.Weight = header ? .bold : .regular
-        let color = header ? RP.muted : RP.ink
-        return HStack(spacing: 6) {
-            Text(name).frame(maxWidth: .infinity, alignment: .leading)
-            if showEmail { Text(email).frame(width: 118, alignment: .leading) }
-            Text(state).frame(width: 52, alignment: .leading)
-            Text(version).frame(width: 64, alignment: .leading)
-            Text(model).frame(width: showEmail ? 74 : 92, alignment: .leading)
-            Text(os).frame(width: 30, alignment: .leading)
-            if !showEmail { Text(sessions).frame(width: 28, alignment: .trailing) }
-            Text(comments).frame(width: 26, alignment: .trailing)
-                .foregroundStyle(highlightComments ? RP.blue : color)
-            Text(crashes).frame(width: 26, alignment: .trailing)
-                .foregroundStyle(highlightCrashes ? RP.orange : color)
+    /// Dos líneas por fila: nombre y correo (si se incluye), versión y build.
+    private func line(_ row: TesterRow) -> some View {
+        HStack(spacing: 6) {
+            twoLines(row.name, showEmail ? row.email : nil).frame(maxWidth: .infinity, alignment: .leading)
+            Text(row.state).frame(width: 50, alignment: .leading)
+            twoLines(row.version, row.build).frame(width: 78, alignment: .leading)
+            Text(row.model).frame(width: 84, alignment: .leading)
+            Text(row.os).frame(width: 28, alignment: .leading)
+            Text(row.installedDate.map { RP.shortDate($0) } ?? "—").frame(width: 44, alignment: .leading)
+            Text("\(row.sessions)").frame(width: 26, alignment: .trailing)
+            Text("\(row.comments)").frame(width: 24, alignment: .trailing)
+                .foregroundStyle(row.comments > 0 ? RP.blue : RP.ink)
+            Text("\(row.crashes)").frame(width: 24, alignment: .trailing)
+                .foregroundStyle(row.crashes > 0 ? RP.orange : RP.ink)
         }
-        .font(.system(size: 8, weight: weight))
-        .foregroundStyle(color)
+        .font(.system(size: 8))
+        .foregroundStyle(RP.ink)
         .lineLimit(1)
         .padding(.horizontal, 6)
-        .frame(height: header ? 20 : 17)
+        .frame(height: showEmail ? 24 : 20)
+    }
+
+    private func twoLines(_ first: String, _ second: String?) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(first)
+            if let second { Text(second).font(.system(size: 7)).foregroundStyle(RP.muted).truncationMode(.middle) }
+        }
+    }
+}
+
+/// Instalaciones de una versión: cuántas, cuándo empezó y cuántas en la última semana.
+struct AdoptionRow: Identifiable {
+    let version: String
+    let installs: Int
+    let first: Date
+    let last: Date
+    let last7: Int
+    var id: String { version }
+
+    static func rows(_ installs: [InstallItem], limit: Int, now: Date = .now) -> [AdoptionRow] {
+        let seven = Calendar.current.date(byAdding: .day, value: -7, to: now) ?? now
+        var grouped: [String: (count: Int, first: Date, last: Date, last7: Int)] = [:]
+        for install in installs {
+            var value = grouped[install.versionKey] ?? (0, install.date, install.date, 0)
+            value.count += 1
+            value.first = min(value.first, install.date)
+            value.last = max(value.last, install.date)
+            if install.date >= seven { value.last7 += 1 }
+            grouped[install.versionKey] = value
+        }
+        let rows = grouped.map { AdoptionRow(version: $0.key, installs: $0.value.count, first: $0.value.first,
+                                             last: $0.value.last, last7: $0.value.last7) }
+        let sorted = rows.sorted { (lhs: AdoptionRow, rhs: AdoptionRow) -> Bool in
+            lhs.version.compare(rhs.version, options: .numeric) == .orderedDescending
+        }
+        return Array(sorted.prefix(limit))
+    }
+}
+
+private struct TestersEvolution: View {
+    let report: TestersReport
+
+    private var colors: [Color] {
+        let palette: [Color] = [RP.green, RP.blue, RP.purple, RP.orange, RP.pink, RP.cyan]
+        return report.timeline.series.enumerated().map { index, name in
+            name == InstallTimeline.others ? RP.muted.opacity(0.5) : palette[index % palette.count]
+        }
+    }
+
+    var body: some View {
+        let timeline = report.timeline
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 10) {
+                KPI(value: timeline.total, label: "Instalaciones", color: RP.blue)
+                KPI(value: timeline.last7, label: "Últimos 7 días", color: RP.green)
+                KPI(value: timeline.last30, label: "Últimos 30 días", color: RP.purple)
+            }
+            Card(title: "Testers con cada versión (acumulado)") {
+                Chart(timeline.cumulative) { point in
+                    LineMark(x: .value("Fecha", point.date, unit: timeline.unit), y: .value("Testers", point.count))
+                        .foregroundStyle(by: .value("Versión", point.series))
+                        .interpolationMethod(.monotone)
+                        .lineStyle(StrokeStyle(lineWidth: 2))
+                }
+                .chartForegroundStyleScale(domain: timeline.series, range: colors)
+                .chartLegend(position: .top, alignment: .leading)
+                .chartXAxis { AxisMarks(values: .automatic(desiredCount: 6)) { _ in AxisValueLabel().foregroundStyle(RP.muted); AxisGridLine().foregroundStyle(RP.line) } }
+                .chartYAxis { AxisMarks { _ in AxisValueLabel().foregroundStyle(RP.muted); AxisGridLine().foregroundStyle(RP.line) } }
+                .frame(height: 140)
+            }
+            Card(title: "Nuevas instalaciones \(timeline.unitTitle)") {
+                Chart(timeline.newInstalls) { point in
+                    BarMark(x: .value("Fecha", point.date, unit: timeline.unit), y: .value("Instalaciones", point.count))
+                        .foregroundStyle(by: .value("Versión", point.series))
+                }
+                .chartForegroundStyleScale(domain: timeline.series, range: colors)
+                .chartLegend(.hidden)
+                .chartXAxis { AxisMarks(values: .automatic(desiredCount: 6)) { _ in AxisValueLabel().foregroundStyle(RP.muted) } }
+                .chartYAxis { AxisMarks { _ in AxisValueLabel().foregroundStyle(RP.muted); AxisGridLine().foregroundStyle(RP.line) } }
+                .frame(height: 76)
+            }
+            Card(title: "Adopción por versión") {
+                VStack(spacing: 0) {
+                    adoptionLine("Versión", "Instalaciones", "Primera", "Última", "7 días", header: true)
+                    ForEach(report.adoption.prefix(6)) { row in
+                        adoptionLine(row.version, "\(row.installs)", RP.shortDate(row.first), RP.shortDate(row.last), "\(row.last7)", header: false)
+                    }
+                }
+            }
+            Text("Fecha en que cada tester instaló la build, según App Store Connect. Apple solo informa la build que cada tester tiene ahora; las anteriores se conservan desde que CuyAppleReport empezó a guardarlas.")
+                .font(.system(size: 8.5)).foregroundStyle(RP.muted)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private func adoptionLine(_ version: String, _ installs: String, _ first: String, _ last: String, _ week: String, header: Bool) -> some View {
+        HStack {
+            Text(version).frame(maxWidth: .infinity, alignment: .leading)
+            Text(installs).frame(width: 70, alignment: .trailing)
+            Text(first).frame(width: 64, alignment: .trailing)
+            Text(last).frame(width: 64, alignment: .trailing)
+            Text(week).frame(width: 44, alignment: .trailing)
+        }
+        .font(.system(size: 8.5, weight: header ? .bold : .regular))
+        .foregroundStyle(header ? RP.muted : RP.ink)
+        .lineLimit(1)
+        .frame(height: 16)
     }
 }
 
@@ -712,5 +846,67 @@ private struct StackedReportRows: View {
             Circle().fill(color).frame(width: 7, height: 7)
             Text(title).font(.system(size: 9)).foregroundStyle(RP.muted)
         }
+    }
+}
+
+private struct TestersDaily: View {
+    let rows: [DailyInstallRow]
+
+    /// Escala ajustada a los datos, para que se note el crecimiento aunque sea pequeño.
+    private var yDomain: ClosedRange<Int> {
+        let low = rows.map(\.total).min() ?? 0
+        let high = rows.map(\.total).max() ?? 0
+        let margin = max(1, (high - low) / 5)
+        return max(0, low - margin)...(high + margin)
+    }
+
+    var body: some View {
+        let chronological = Array(rows.reversed())
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
+                KPI(value: rows.first?.total ?? 0, label: "Testers con la app hoy", color: RP.blue)
+                KPI(value: rows.reduce(0) { $0 + $1.new }, label: "Nuevos en 30 días", color: RP.green)
+                KPI(value: rows.reduce(0) { $0 + $1.updated }, label: "Actualizaron en 30 días", color: RP.purple)
+            }
+            Card(title: "Testers con la app (cada uno cuenta una vez)") {
+                Chart(chronological) { row in
+                    LineMark(x: .value("Fecha", row.date, unit: .day), y: .value("Testers", row.total))
+                        .foregroundStyle(RP.blue)
+                        .lineStyle(StrokeStyle(lineWidth: 2))
+                }
+                .chartYScale(domain: yDomain)
+                .chartXAxis { AxisMarks(values: .automatic(desiredCount: 6)) { _ in AxisValueLabel().foregroundStyle(RP.muted) } }
+                .chartYAxis { AxisMarks(values: .automatic(desiredCount: 2)) { _ in AxisValueLabel().foregroundStyle(RP.muted); AxisGridLine().foregroundStyle(RP.line) } }
+                .frame(height: 54)
+                .clipped()
+            }
+            VStack(spacing: 0) {
+                line("Fecha", "Testers con la app", "Nuevos", "Actualizaron", header: true).background(RP.faint)
+                ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
+                    line(row.date.formatted(Date.FormatStyle(locale: RP.locale).weekday(.wide).day().month(.wide)), row.total.formatted(),
+                         row.new > 0 ? "+\(row.new)" : "—", row.updated > 0 ? "\(row.updated)" : "—", header: false)
+                        .background(index.isMultiple(of: 2) ? Color.clear : RP.faint.opacity(0.6))
+                }
+            }
+            Text("Cada tester se cuenta una vez, desde el día en que instaló por primera vez; vuelve a aparecer solo si ese día cambió de build (Actualizaron). Quien desinstala no se descuenta, porque Apple no informa esa fecha.")
+                .font(.system(size: 8)).foregroundStyle(RP.muted)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private func line(_ date: String, _ total: String, _ new: String, _ updated: String, header: Bool) -> some View {
+        HStack {
+            Text(date).frame(maxWidth: .infinity, alignment: .leading)
+            Text(total).frame(width: 110, alignment: .trailing)
+            Text(new).frame(width: 70, alignment: .trailing)
+                .foregroundStyle(!header && new != "—" ? RP.green : (header ? RP.muted : RP.ink))
+            Text(updated).frame(width: 80, alignment: .trailing)
+                .foregroundStyle(!header && updated != "—" ? RP.blue : (header ? RP.muted : RP.ink))
+        }
+        .font(.system(size: 8.5, weight: header ? .bold : .regular))
+        .foregroundStyle(header ? RP.muted : RP.ink)
+        .monospacedDigit()
+        .padding(.horizontal, 6)
+        .frame(height: 13)
     }
 }

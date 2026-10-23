@@ -19,6 +19,8 @@ struct TesterItem: Identifiable, Hashable {
     let versionKey: String
     let installedVersion: String?
     let installedBuild: String?
+    /// Fecha en que instaló la build actual (la que muestra App Store Connect).
+    let installedDate: Date?
     let appHasLatestBuild: Bool
     let isUpToDate: Bool
     let deviceCode: String?
@@ -56,6 +58,8 @@ struct TestersView: View {
     @EnvironmentObject private var appState: AppState
     @State private var items: [TesterItem] = []
     @State private var groups: [TesterGroupItem] = []
+    @State private var installs: [InstallItem] = []
+    @State private var chartsTab: ChartsTab = .summary
     @State private var latestLabel: String?
     @State private var loaded = false
     @State private var scope: Scope = .external
@@ -69,6 +73,12 @@ struct TestersView: View {
     @State private var showExporter = false
     @State private var showPDFSheet = false
     @State private var exportError: String?
+
+    enum ChartsTab: String, CaseIterable, Identifiable {
+        case summary = "Resumen"
+        case evolution = "Evolución de instalaciones"
+        var id: String { rawValue }
+    }
 
     enum Scope: String, CaseIterable, Identifiable {
         case external = "Externos"
@@ -92,6 +102,7 @@ struct TestersView: View {
         // Un único filtrado por redibujado; las cifras, gráficos y tabla reciben el resultado.
         let scoped = items.filter(inScope)
         let visible = scoped.filter(matchesFilters)
+        let timelineInstalls = installs(for: scoped.filter(matchesFiltersExceptVersion), versions: selectedVersions)
         Group {
             if !loaded {
                 ProgressView("Preparando testers…").frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -107,16 +118,28 @@ struct TestersView: View {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 14) {
                             kpis(scoped)
-                            HStack(alignment: .top, spacing: 14) {
-                                versionChart(scoped)
-                                stateChart(scoped)
-                                groupsPanel
+                            Picker("Gráficos", selection: $chartsTab) {
+                                ForEach(ChartsTab.allCases) { Text($0.rawValue).tag($0) }
                             }
-                            .frame(height: 210)
+                            .pickerStyle(.segmented)
+                            .labelsHidden()
+                            .frame(width: 260)
+                            switch chartsTab {
+                            case .summary:
+                                HStack(alignment: .top, spacing: 14) {
+                                    versionChart(scoped)
+                                    stateChart(scoped)
+                                    groupsPanel
+                                }
+                                .frame(height: 230)
+                            case .evolution:
+                                InstallTimelinePanel(installs: timelineInstalls)
+                                    .frame(height: 230)
+                            }
                         }
                         .padding(16)
                     }
-                    .frame(maxHeight: 380)
+                    .frame(maxHeight: 440)
                     Divider()
                     // Con muchos testers, que SwiftUI compare y anime las filas al cambiar un filtro
                     // bloqueaba la app varios segundos: se reconstruye la tabla en su lugar.
@@ -129,6 +152,7 @@ struct TestersView: View {
         #if DEBUG
         .task { if ProcessInfo.processInfo.arguments.contains("--bench-testers") { await benchmark() } }
         .task { if ProcessInfo.processInfo.arguments.contains("--export-testers-pdf") { await exportDemoPDF() } }
+        .task { if ProcessInfo.processInfo.arguments.contains("--tab-evolution") { chartsTab = .evolution } }
         #endif
         .searchable(text: $appState.searchQuery, prompt: "Buscar tester o dispositivo")
         .fileExporter(isPresented: $showExporter, document: exportDocument, contentType: exportType,
@@ -153,7 +177,14 @@ struct TestersView: View {
     private func rebuildSnapshot() {
         var groupItems: [TesterGroupItem] = []
         var testerItems: [TesterItem] = []
+        var installItems: [InstallItem] = []
         for app in apps {
+            // Historia guardada + la instalación actual de cada tester (por si aún no se guardó).
+            var seen: Set<String> = []
+            for event in app.installEvents {
+                seen.insert(event.eventId)
+                installItems.append(InstallItem(testerRecordId: event.testerRecordId, versionKey: event.versionKey, date: event.date))
+            }
             let appGroups = app.betaGroups
             let names = Dictionary(appGroups.map { ($0.groupId, $0.name) }, uniquingKeysWith: { first, _ in first })
             var members: [String: Int] = [:]
@@ -175,12 +206,16 @@ struct TestersView: View {
                 let groupNames = groupIds.compactMap { names[$0] }
                 let realName = [tester.firstName, tester.lastName].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " ")
                 let emailKey = tester.email?.lowercased() ?? ""
+                let installedDate = tester.installedBuild == nil ? nil : tester.lastModifiedDate
+                if let build = tester.installedBuild, let installedDate, !seen.contains("\(tester.recordId)|\(build)") {
+                    installItems.append(InstallItem(testerRecordId: tester.recordId, versionKey: installedLabel ?? "Build \(build)", date: installedDate))
+                }
                 testerItems.append(TesterItem(
                     id: tester.recordId, displayName: name, name: realName.isEmpty ? nil : realName, email: tester.email, appName: app.name,
                     groupIds: groupIds, groupLabel: groupNames.isEmpty ? "—" : groupNames.joined(separator: ", "),
                     state: state, inviteType: tester.inviteType,
                     versionKey: installedLabel ?? TesterItem.notInstalled,
-                    installedVersion: tester.installedVersion, installedBuild: tester.installedBuild,
+                    installedVersion: tester.installedVersion, installedBuild: tester.installedBuild, installedDate: installedDate,
                     appHasLatestBuild: latestBuild != nil,
                     isUpToDate: latestBuild != nil && tester.installedBuild == latestBuild,
                     deviceCode: tester.installedDevice, deviceName: deviceName, osVersion: tester.installedOsVersion,
@@ -196,6 +231,7 @@ struct TestersView: View {
                                 publicLinkLimit: $0.publicLinkLimit, feedbackEnabled: $0.feedbackEnabled, members: members[$0.groupId] ?? 0)
             }
         }
+        installs = installItems
         items = testerItems.sorted { ($0.sortRank, $0.displayName.lowercased()) < ($1.sortRank, $1.displayName.lowercased()) }
         groups = groupItems.sorted { ($0.isInternal ? 1 : 0, $0.name) < ($1.isInternal ? 1 : 0, $1.name) }
         if apps.count == 1, let app = apps.first {
@@ -211,6 +247,12 @@ struct TestersView: View {
         if let versions = selectedVersions { selectedVersions = versions.intersection(Set(items.map(\.versionKey))) }
         if selectedGroup != "Todos", !groups.contains(where: { $0.id == selectedGroup }) { selectedGroup = "Todos" }
         loaded = true
+    }
+
+    /// Instalaciones de los testers dados, limitadas a las versiones elegidas (`nil` = todas).
+    private func installs(for testers: [TesterItem], versions: Set<String>?) -> [InstallItem] {
+        let ids = Set(testers.map(\.id))
+        return installs.filter { ids.contains($0.testerRecordId) && (versions?.contains($0.versionKey) ?? true) }
     }
 
     private func inScope(_ tester: TesterItem) -> Bool {
@@ -453,8 +495,11 @@ struct TestersView: View {
                 }
             }.width(min: 110, ideal: 130)
             TableColumn("Modelo") { tester in Text(tester.deviceName ?? "—").lineLimit(1) }.width(min: 110, ideal: 140)
+            TableColumn("Instalada el") { tester in
+                Text(tester.installedDate?.formatted(date: .abbreviated, time: .omitted) ?? "—")
+                    .foregroundStyle(tester.installedDate == nil ? .tertiary : .primary)
+            }.width(min: 80, ideal: 95)
             TableColumn("iOS") { tester in Text(tester.osVersion ?? "—") }.width(min: 50, ideal: 60)
-            TableColumn("Disp.") { tester in Text("\(tester.devices)").monospacedDigit() }.width(min: 40, ideal: 45)
             TableColumn("Sesiones 30 d") { tester in Text("\(tester.sessions)").monospacedDigit() }.width(min: 70, ideal: 85)
             TableColumn("Errores 30 d") { tester in
                 Text("\(tester.crashes)").monospacedDigit().foregroundStyle(tester.crashes > 0 ? Color.orange : Color.primary)
@@ -492,7 +537,7 @@ struct TestersView: View {
         for includeEmails in [false, true] {
             let options = TestersPDFOptions(versions: Set(base.map(\.versionKey)), includeEmails: includeEmails, listMode: .all)
             let url = FileManager.default.temporaryDirectory.appending(path: "demo-testers\(includeEmails ? "-emails" : "").pdf")
-            if let data = try? TestersPDFRenderer.render(testers: base, appNames: apps.map(\.name).joined(separator: " · "),
+            if let data = try? TestersPDFRenderer.render(testers: base, installs: installs, appNames: apps.map(\.name).joined(separator: " · "),
                                                         filtersText: filtersText, latestLabel: latestLabel, options: options) {
                 try? data.write(to: url)
                 print("TESTERS_PDF_WRITTEN \(url.path) \(data.count)")
@@ -526,12 +571,13 @@ struct TestersView: View {
 
     private func exportCSV(_ visible: [TesterItem]) {
         let headers = ["tester", "email", "app", "grupos", "externo", "estado", "invitacion", "version_instalada",
-                       "build_instalada", "al_dia", "modelo", "dispositivo", "ios", "dispositivos", "sesiones_30d", "errores_30d", "feedback_30d",
+                       "build_instalada", "fecha_instalacion", "al_dia", "modelo", "dispositivo", "ios", "dispositivos", "sesiones_30d", "errores_30d", "feedback_30d",
                        "comentarios_enviados", "errores_enviados"]
         let rows = visible.map { tester -> [String] in
             [tester.displayName, tester.email ?? "", tester.appName, tester.groupLabel,
              tester.isExternal ? "sí" : "no", tester.state?.title ?? "", tester.inviteType == "PUBLIC_LINK" ? "Enlace público" : "Email",
-             tester.installedVersion ?? "", tester.installedBuild ?? "", tester.isUpToDate ? "sí" : "no",
+             tester.installedVersion ?? "", tester.installedBuild ?? "",
+             tester.installedDate.map { ISO8601DateFormatter().string(from: $0) } ?? "", tester.isUpToDate ? "sí" : "no",
              tester.deviceName ?? "", tester.deviceCode ?? "", tester.osVersion ?? "", "\(tester.devices)",
              "\(tester.sessions)", "\(tester.crashes)", "\(tester.feedback)",
              "\(tester.commentReports)", "\(tester.crashReports)"]
@@ -549,7 +595,8 @@ struct TestersView: View {
         do {
             let chosen = base.filter { options.versions.contains($0.versionKey) }
             let appNames = Array(Set(apps.map(\.name))).sorted().joined(separator: " · ")
-            let data = try TestersPDFRenderer.render(testers: chosen, appNames: appNames, filtersText: filtersText,
+            let data = try TestersPDFRenderer.render(testers: chosen, installs: installs(for: base, versions: options.versions),
+                                                     appNames: appNames, filtersText: filtersText,
                                                      latestLabel: latestLabel, options: options)
             exportDocument = ExportFile(data: data, contentType: .pdf)
             exportType = .pdf

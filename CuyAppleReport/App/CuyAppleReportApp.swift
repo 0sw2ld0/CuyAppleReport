@@ -14,7 +14,7 @@ struct CuyAppleReportApp: App {
         #endif
         do {
             modelContainer = try ModelContainer(for: Connection.self, MonitoredApp.self, Feedback.self, SyncRun.self,
-                                                BetaTesterRecord.self, BetaGroupRecord.self,
+                                                BetaTesterRecord.self, BetaGroupRecord.self, TesterInstallEvent.self,
                                                 configurations: ModelConfiguration(isStoredInMemoryOnly: inMemory))
         } catch {
             fatalError("No se pudo iniciar la base de datos local: \(error)")

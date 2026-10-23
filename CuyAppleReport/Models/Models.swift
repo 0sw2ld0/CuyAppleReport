@@ -103,6 +103,7 @@ final class MonitoredApp {
     @Relationship(deleteRule: .cascade) var feedbacks: [Feedback] = []
     @Relationship(deleteRule: .cascade) var testers: [BetaTesterRecord] = []
     @Relationship(deleteRule: .cascade) var betaGroups: [BetaGroupRecord] = []
+    @Relationship(deleteRule: .cascade) var installEvents: [TesterInstallEvent] = []
     /// Última build subida a TestFlight (para saber qué testers están al día).
     var latestVersion: String?
     var latestBuild: String?
@@ -304,4 +305,29 @@ final class BetaGroupRecord {
         self.isInternal = isInternal
         self.app = app
     }
+}
+
+/// Un tester instaló una build. Apple solo informa la fecha de la build instalada ahora
+/// (el "lastModifiedDate" que muestra App Store Connect), así que se guarda en cada sincronización
+/// para no perder la historia cuando el tester actualiza a otra build.
+@Model
+final class TesterInstallEvent {
+    @Attribute(.unique) var eventId: String        // "<appId>|<testerId>|<build>"
+    var testerRecordId: String                      // "<appId>|<testerId>"
+    var version: String?
+    var build: String
+    var date: Date
+    var app: MonitoredApp?
+
+    init(eventId: String, testerRecordId: String, version: String?, build: String, date: Date, app: MonitoredApp?) {
+        self.eventId = eventId
+        self.testerRecordId = testerRecordId
+        self.version = version
+        self.build = build
+        self.date = date
+        self.app = app
+    }
+
+    /// Misma clave que el filtro de versión instalada: "v1.0 (64)".
+    var versionKey: String { version.map { "v\($0) (\(build))" } ?? "Build \(build)" }
 }

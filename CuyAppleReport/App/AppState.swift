@@ -86,6 +86,14 @@ final class AppState: ObservableObject {
             if !wasExpired {
                 await notify("Tu sesión de App Store Connect expiró. Vuelve a iniciar sesión para seguir sincronizando.")
             }
+        } catch let partial as PartialSyncError {
+            errorMessage = partial.localizedDescription
+            syncMessage = "Sincronización incompleta · \(partial.newItems) nuevos"
+            showSyncFailure(partial.localizedDescription, sessionExpired: false)
+            if partial.newItems > 0 {
+                NSApplication.shared.dockTile.badgeLabel = "\(partial.newItems)"
+                await notify("Se encontró feedback nuevo (\(partial.newItems) elementos), aunque parte de la sincronización falló.")
+            }
         } catch {
             errorMessage = error.localizedDescription
             syncMessage = "Falló la sincronización"
